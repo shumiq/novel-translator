@@ -1,0 +1,43 @@
+{
+  "general": {
+    "defaultApprovalMode": "auto_edit",
+    "sessionRetention": {
+      "enabled": true
+    }
+  },
+  "experimental": {
+    "modelSteering": true
+  },
+  "security": {
+    "enablePermanentToolApproval": true
+  },
+  "tools": {
+    "shell": {
+      "showColor": true
+    }
+  },
+  "context": {
+    "loadMemoryFromIncludeDirectories": true
+  },
+  "ui": {
+    "loadingPhrases": "off",
+    "showModelInfoInChat": true,
+    "showCitations": true,
+    "showMemoryUsage": true,
+    "footer": {
+      "hideContextPercentage": false
+    },
+    "hideBanner": true,
+    "hideTips": true,
+    "showStatusInTitle": true,
+    "inlineThinkingMode": "full"
+  },
+  "excludeTools": [
+    "powershell",
+    "echo",
+    "cat",
+    "grep",
+    "type",
+    "sed"
+  ]
+}
