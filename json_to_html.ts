@@ -21,8 +21,8 @@ for (const file of jsonFiles) {
     title: string;
     content: string;
   };
-  const isThai = /\p{sc=Thai}/u.test(data.content);
-  if (isThai) continue;
+  const isEnglish = /[a-zA-Z]{3,}/.test(data.content);
+  if (isEnglish) continue;
   const document = new JSDOM(data.content).window.document;
   const lines: string[] = Array.from(document.body.querySelectorAll("p"))
     .map((el) => el.textContent.trim())

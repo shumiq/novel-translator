@@ -8,8 +8,8 @@ const files = Array.from(glob.scanSync(".")) as string[];
 for (const file of files.toSorted()) {
   if (!file.endsWith("html")) continue;
   const rawHTML = readFileSync(file, "utf-8");
-  const isThai = /\p{sc=Thai}/u.test(rawHTML);
-  if (!isThai) continue;
+  const isEnglish = /[a-zA-Z]{3,}/.test(rawHTML);
+  if (!isEnglish) continue;
   const document = new JSDOM(rawHTML).window.document;
   const lines: string[] = Array.from(document.querySelectorAll("p"))
     .map((el) => el.textContent.trim())

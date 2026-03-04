@@ -8,8 +8,8 @@ const files = Array.from(glob.scanSync(".")) as string[];
 for (const file of files.toSorted()) {
   if (!file.endsWith("html")) continue;
   const rawHTML = readFileSync(file, "utf-8");
-  const isThai = /\p{sc=Thai}/u.test(rawHTML);
-  if (!isThai) continue;
+  const isEnglish = /[a-zA-Z]{3,}/.test(rawHTML);
+  if (!isEnglish) continue;
   const body = new JSDOM(rawHTML).window.document.body.textContent;
   const lines: string[] = body
     .split("\n")
@@ -30,24 +30,14 @@ for (const file of files.toSorted()) {
             .replaceAll("』", '"')
             .replaceAll("[", '"')
             .replaceAll("]", '"')
-            .replaceAll("“", '"')
-            .replaceAll("”", '"')
-            .replaceAll("‘", "'")
-            .replaceAll("’", "'")
+            .replaceAll("\u201c", '"')
+            .replaceAll("\u201d", '"')
+            .replaceAll("\u2018", "'")
+            .replaceAll("\u2019", "'")
             .replaceAll("【", '"')
             .replaceAll("】", '"')
             .replaceAll("（", " (")
             .replaceAll("）", ") ")
-            .replaceAll("๑", "1")
-            .replaceAll("๒", "2")
-            .replaceAll("๓", "3")
-            .replaceAll("๔", "4")
-            .replaceAll("๕", "5")
-            .replaceAll("๖", "6")
-            .replaceAll("๗", "7")
-            .replaceAll("๘", "8")
-            .replaceAll("๙", "9")
-            .replaceAll("๐", "0")
             .replaceAll("１", "1")
             .replaceAll("２", "2")
             .replaceAll("３", "3")

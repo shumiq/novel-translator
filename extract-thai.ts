@@ -26,8 +26,8 @@ for (const file of files.sort((a, b) =>
 )) {
   if (!file.endsWith("html") || filterOut.includes(file)) continue;
   const rawHTML = readFileSync(file, "utf-8");
-  const isThai = /\p{sc=Thai}/u.test(rawHTML);
-  if (!isThai) continue;
+  const isEnglish = /[a-zA-Z]{3,}/.test(rawHTML);
+  if (!isEnglish) continue;
   const document = new JSDOM(rawHTML).window.document;
   const lines: string[] = document.body.textContent
     ?.split("\n")

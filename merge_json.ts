@@ -22,8 +22,8 @@ for (const file of readdirSync(folder).sort(
   const { title, content } = JSON.parse(
     readFileSync(`${folder}/${file}`, "utf-8"),
   ) as { title: string; content: string };
-  const isThai = /\p{sc=Thai}/u.test(content);
-  if(!isThai) continue;
+  const isEnglish = /[a-zA-Z]{3,}/.test(content);
+  if(!isEnglish) continue;
   const document = new JSDOM(content).window.document;
   const lines: string[] = Array.from(document.querySelectorAll("p"))
     .map((el) => el.textContent.trim())

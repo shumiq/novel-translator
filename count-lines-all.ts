@@ -10,8 +10,8 @@ const countLines = {} as Record<string, number>;
 for (const file of files.toSorted()) {
   if (!file.endsWith("html")) continue;
   const rawHTML = readFileSync(file, "utf-8");
-  //   const isThai = /\p{sc=Thai}/u.test(rawHTML);
-  //   if (!isThai || rawHTML.startsWith("<p>")) continue;
+  //   const isEnglish = /[a-zA-Z]{3,}/.test(rawHTML);
+//   if (!isEnglish || rawHTML.startsWith("<p>")) continue;
   const document = new JSDOM(rawHTML).window.document;
   const lines: string[] = document.body.textContent
     ?.split("\n")

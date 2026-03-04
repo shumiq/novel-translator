@@ -18,8 +18,8 @@ const result = JSON.parse(readFileSync("result.json", "utf-8")) as Record<
 
 for (const file of files.toSorted()) {
   const rawHTML = readFileSync(file, "utf-8");
-  const isThai = /\p{sc=Thai}/u.test(rawHTML);
-  if (!isThai) continue;
+  const isEnglish = /[a-zA-Z]{3,}/.test(rawHTML);
+  if (!isEnglish) continue;
   if (result[file]) {
     // Already Refined
     if (result[file] === "DONE") {

@@ -11,9 +11,9 @@ const checked = readFileSync("check.txt", "utf-8")
 for (const file of files.toSorted()) {
   if (!file.endsWith("html") || checked.includes(file)) continue;
   const rawHTML = readFileSync(file, "utf-8");
-  const isThai = /\p{sc=Thai}/u.test(rawHTML);
+  const isEnglish = /[a-zA-Z]{3,}/.test(rawHTML);
   const isParenthesis = /\([^\)]*\)/u.test(rawHTML);
-  if (isThai && isParenthesis) {
+  if (isEnglish && isParenthesis) {
     console.log(file);
     rawHTML.split("\n").forEach((line, index) => {
       if (/\([^\)]*\)/u.test(line)) {

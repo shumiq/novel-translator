@@ -12,12 +12,12 @@
 ### Database Synchronization
 - **Immediate DB Updates**: Never wait until the end of a file to update the database. Sync every term or persona as soon as it is identified.
 - **Database Filter**: **DO NOT** add generic words (e.g., "the", "is", "and"). Only add proper nouns, technical terms, and unique expressions.
-- **Key Consistency**: Always use the **Japanese** word as the primary key and the **Thai** translation in the `alias` field.
-- **Conflict Handling**: If an update throws a consistency error (duplicate Thai alias), use `--overwrite` only if you are certain the new data is more accurate.
+- **Key Consistency**: Always use the **Japanese** word as the primary key and the **English** translation in the `alias` field.
+- **Conflict Handling**: If an update throws a consistency error (duplicate English alias), use `--overwrite` only if you are certain the new data is more accurate.
 
 ### Content & Structural Integrity
 - **Structural Integrity**: Do not alter HTML tags. Only modify the text content within them.
-- **No Mixing**: The final output should not contain original language characters (Japanese/English) in the story text, unless they are intentional.
+- **No Mixing**: The final output should not contain original language characters (Japanese) in the story text, unless they are intentional.
 
 ### Process Completion
 - **Context Management**: After processing each file, forget its content (clear local context) before moving to the next file to reduce AI context usage.
@@ -26,7 +26,7 @@
 ---
 
 ## ⚠️ Strict Rules for All Agents
-- **Tools allowance**: Only allow to use internal read/writ/replace tools and `bun` command.
+- **Tools allowance**: Only allow to use internal read/write/replace tools and `bun` command.
 - **Follow Instructions Strictly**: Never deviate from the given instructions.  
 - **No Code Generation**: Execute the process steps only. Do not write or suggest code scripts unless explicitly requested.
 - **CLI Reference**: See [database.readme.md](../database.readme.md) for command syntax.

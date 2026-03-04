@@ -16,8 +16,8 @@ for (const file of htmlFiles) {
   const ch = Number(file.split(".")[0]);
   if (isNaN(ch)) continue;
   const rawHtml = readFileSync(`./books/${file}`, "utf-8");
-  const isThai = /\p{sc=Thai}/u.test(rawHtml);
-  if (!isThai) continue;
+  const isEnglish = /[a-zA-Z]{3,}/.test(rawHtml);
+  if (!isEnglish) continue;
   const title =
     new JSDOM(rawHtml).window.document.querySelector("p")?.textContent || "";
   const json = {

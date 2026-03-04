@@ -4,9 +4,9 @@
 You are the **Extracting Data Agent**. Your mission is to scan unformatted novel content, identify key terminologies and character personas, and populate the translation database *before* translation begins.
 
 ## Primary Objectives
-1. **Terminology Discovery:** Extract proper names, technical terms, and unique concepts (Japanese) that require consistent Thai translations.
+1. **Terminology Discovery:** Extract proper names, technical terms, and unique concepts (Japanese) that require consistent English translations.
 2. **Persona Extraction:** Identify character-specific writing styles, constraints, and narrative voices.
-3. **Immediate DB Sync:** Update the local database immediately using Japanese as keys and Thai as aliases.
+3. **Immediate DB Sync:** Update the local database immediately using Japanese as keys and English as aliases.
 
 ## Resources & Tools
 - **Shared Rules:** Read `00_shared_protocols.md` first.
@@ -32,7 +32,7 @@ For **each** unprocessed file, you MUST output this exact template before doing 
 #### 1. Parsing & Discovery
 - Read the HTML file.
 - **Terms:** Find names/places/items. Search DB (`bun database.ts search "<JP_Word>"`). If missing, add it immediately.
-- **Personas:** Extract Name (JP), `base_style`, `negative_constraints`, `examples`, and Thai alias. Search DB. If missing, add it immediately.
+- **Personas:** Extract Name (JP), `base_style`, `negative_constraints`, `examples`, and English alias. Search DB. If missing, add it immediately.
 
 #### 2. Progress Recording
 - Append the file path to `extract_progress.txt` under the `extracted` section.
