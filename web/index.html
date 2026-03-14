@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Novel Translator</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      const isThai = (text) =>
+        /\p{Script=Thai}/u.test(text) &&
+        text.split(/[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u)
+          .length < 100;
+
+      const isJapanese = (text) =>
+        /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u.test(text);
+
+      const delay = async (ts) =>
+        new Promise((resolve) => setTimeout(resolve, ts));
+
+      const root = document.querySelector("#root");
+
+      async function init() {
+        const files = await fetch("/api/list").then((res) => res.json());
+        let progress = sessionStorage.getItem("progress") ?? "";
+        for (const file of files) {
+          if (progress.includes(`books/${file}`)) continue;
+          const html = await fetch(`/books/${file}`).then((res) => res.text());
+          if (isThai(html)) {
+            progress += `books/${file}\n`;
+            sessionStorage.setItem("progress", progress);
+            continue;
+          }
+          root.innerHTML = html;
+          const lineEls = Array.from(document.querySelectorAll("p"));
+          while (true) {
+            const jpLineEl = lineEls.find(
+              (lineEl) =>
+                isJapanese(lineEl.textContent) && !isThai(lineEl.textContent),
+            );
+            if (!jpLineEl) break;
+            jpLineEl.scrollIntoView();
+            await delay(1000);
+          }
+          await fetch(`books/${file}`, {
+            method: "POST",
+            body: root.textContent
+              .split("\n")
+              .map((line) => line.trim())
+              .filter(Boolean)
+              .map((line) => `<p>${line}</p>`)
+              .join("\n"),
+          });
+          console.log(`Finish ${file}`);
+          window.scrollTo(0, 0);
+        }
+      }
+      init();
+    </script>
+  </body>
+</html>

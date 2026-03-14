@@ -1,6 +1,7 @@
 import Fuse from "fuse.js";
 import { writeFileSync } from "node:fs";
 import readline from "node:readline";
+import { isJapanese, isThai } from "./utils";
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -23,16 +24,14 @@ type Persona = {
   negative_constraints: string;
   example: string[];
   alias: string[];
+  invalid_translation: string[];
 };
 
 type Terminology = {
   description: string;
   alias: string[];
+  invalid_translation: string[];
 };
-
-const isJapanese = (text: string) =>
-  /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u.test(text);
-const isThai = (text: string) => /\p{sc=Thai}/u.test(text);
 
 let data = {} as Record<string, Persona | Terminology>;
 
@@ -54,7 +53,7 @@ if (await dataFile.exists()) {
 let fuse = new Fuse(
   Object.entries(data).map(([name, data]) => ({ name, ...data })),
   {
-    keys: ["name", "alias"],
+    keys: ["name", "alias", "invalid_translation"],
     includeScore: true,
   },
 );
@@ -77,9 +76,10 @@ const parseArgs = (args: string[]) => {
           process.exit(1);
         }
         const value = args[i + 1];
-        if (key === "alias" || key === "example") {
-          if (!result[key]) result[key] = [];
-          result[key].push(value);
+        if (key === "alias" || key === "example" || key === "invalid-translation") {
+          const finalKey = key === "invalid-translation" ? "invalid_translation" : key;
+          if (!result[finalKey]) result[finalKey] = [];
+          result[finalKey].push(value);
         } else {
           result[key] = value;
         }
@@ -176,6 +176,9 @@ if (command === "terminology") {
       alias: Array.from(
         new Set([...(data[body.word]?.alias || []), ...body.alias]),
       ),
+      invalid_translation: Array.from(
+        new Set([...(data[body.word]?.invalid_translation || []), ...(body.invalid_translation || [])]),
+      ),
     };
     fuse = new Fuse(
       Object.entries(data).map(([name, data]) => ({
@@ -183,7 +186,7 @@ if (command === "terminology") {
         ...data,
       })),
       {
-        keys: ["name", "alias"],
+        keys: ["name", "alias", "invalid_translation"],
       },
     );
     saveData();
@@ -229,13 +232,14 @@ if (command === "terminology") {
     // Update fields
     const updated: Terminology = {
       description: body.description || existing.description,
-      alias: Array.from(new Set([...existing.alias, ...(body.alias || [])])),
+      alias: Array.from(new Set([...(existing.alias || []), ...(body.alias || [])])),
+      invalid_translation: Array.from(new Set([...(existing.invalid_translation || []), ...(body.invalid_translation || [])])),
     };
     data[body.word] = updated;
     fuse = new Fuse(
       Object.entries(data).map(([name, data]) => ({ name, ...data })),
       {
-        keys: ["name", "alias"],
+        keys: ["name", "alias", "invalid_translation"],
       },
     );
     saveData();
@@ -349,11 +353,14 @@ if (command === "terminology") {
       alias: Array.from(
         new Set([...(data[body.name]?.alias || []), ...body.alias]),
       ),
+      invalid_translation: Array.from(
+        new Set([...(data[body.name]?.invalid_translation || []), ...(body.invalid_translation || [])]),
+      ),
     };
     fuse = new Fuse(
       Object.entries(data).map(([name, data]) => ({ name, ...data })),
       {
-        keys: ["name", "alias"],
+        keys: ["name", "alias", "invalid_translation"],
       },
     );
     saveData();
@@ -369,18 +376,16 @@ if (command === "terminology") {
       process.exit(1);
     }
     const existing = data[body.name] as Persona;
-    if (!existing?.description) {
+    if (!existing) {
       console.error(`Error: Persona '${body.name}' does not exist.`);
       process.exit(1);
     }
     // Validate description if provided
-    if (!body.description || typeof body.description !== "string") {
-      console.error("Invalid arguments: --description (string) is required");
-      process.exit(1);
-    }
-    if (!isThai(body.description)) {
-      console.error("Invalid arguments: description must be Thai");
-      process.exit(1);
+    if (body.description) {
+      if (typeof body.description !== "string" || !isThai(body.description)) {
+        console.error("Invalid arguments: description must be Thai");
+        process.exit(1);
+      }
     }
     // Validate base_style if provided
     if (body.base_style && !isThai(body.base_style)) {
@@ -414,7 +419,7 @@ if (command === "terminology") {
     const updated: Persona = {
       ...existing,
       gender: body.gender || existing.gender,
-      description: body.description,
+      description: body.description || existing.description,
       base_style: body.base_style || existing.base_style,
       negative_constraints:
         body.negative_constraints || existing.negative_constraints,
@@ -424,12 +429,15 @@ if (command === "terminology") {
       alias: Array.from(
         new Set([...(existing.alias || []), ...(body.alias || [])]),
       ),
+      invalid_translation: Array.from(
+        new Set([...(existing.invalid_translation || []), ...(body.invalid_translation || [])]),
+      ),
     };
     data[body.name] = updated;
     fuse = new Fuse(
       Object.entries(data).map(([name, data]) => ({ name, ...data })),
       {
-        keys: ["name", "alias"],
+        keys: ["name", "alias", "invalid_translation"],
       },
     );
     saveData();
@@ -449,7 +457,12 @@ if (command === "terminology") {
 
   function search(word: string) {
     const exactMatches = Object.entries(data)
-      .filter(([name, data]) => name === word || data.alias.includes(word))
+      .filter(
+        ([name, data]) =>
+          name === word ||
+          data.alias.includes(word) ||
+          (data.invalid_translation || []).includes(word),
+      )
       .map(([name, data]) => ({ name, ...data }));
 
     // For fuzzy search, search each query and combine results
@@ -469,13 +482,13 @@ if (command === "terminology") {
 } else {
   console.log("Usage:");
   console.log(
-    'bun database.ts terminology add --word "日本語単語" --description "คำอธิบายภาษาไทย" --alias "คำแปลภาษาไทย"',
+    'bun database.ts terminology add --word "日本語単語" --description "คำอธิบายภาษาไทย" --alias "คำแปลภาษาไทย" --invalid-translation "wrong_translation1" --invalid-translation "wrong_translation2"',
   );
   console.log(
     'bun database.ts terminology update --word "日本語単語" --description "คำอธิบายใหม่" --alias "EnglishAlias"',
   );
   console.log(
-    'bun database.ts personas add --name "日本語名前" --gender "ชาย" --description "คำอธิบายบุคลิก" --base_style "สไตล์การพูด" --negative_constraints "ข้อจำกัด" --example "ตัวอย่างประโยค" --alias "ชื่อภาษาไทย"',
+    'bun database.ts personas add --name "日本語名前" --gender "ชาย" --description "คำอธิบายบุคลิก" --base_style "สไตล์การพูด" --negative_constraints "ข้อจำกัด" --example "ตัวอย่างประโยค" --alias "ชื่อภาษาไทย" --invalid-translation "wrong_translation"',
   );
   console.log(
     'bun database.ts personas update --name "日本語名前" --gender "ชาย" --description "คำอธิบายใหม่" --base_style "สไตล์ใหม่" --negative_constraints "ข้อจำกัดใหม่" --example "ตัวอย่างเพิ่มเติม" --alias "EnglishAlias"',
