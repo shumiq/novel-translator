@@ -1,6 +1,7 @@
 import Fuse from "fuse.js";
 import { writeFileSync } from "node:fs";
 import readline from "node:readline";
+import { isJapanese } from "./utils";
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -32,9 +33,15 @@ type Terminology = {
   invalid_translation: string[];
 };
 
-const isJapanese = (text: string) =>
-  /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u.test(text);
-const isThai = (text: string) => /\p{sc=Thai}/u.test(text);
+const isEnglish = (text: string) => {
+  const wordCount = text
+    .replace(/[^\p{Script=Latin}\s]/gu, " ")
+    .split(/\s+/)
+    .filter((w) => w.length >= 2).length;
+  return wordCount > 0 && wordCount <= 3
+    ? /\p{Script=Latin}{3,}/u.test(text)
+    : wordCount >= 1;
+};
 
 let data = {} as Record<string, Persona | Terminology>;
 
@@ -79,8 +86,13 @@ const parseArgs = (args: string[]) => {
           process.exit(1);
         }
         const value = args[i + 1];
-        if (key === "alias" || key === "example" || key === "invalid-translation") {
-          const finalKey = key === "invalid-translation" ? "invalid_translation" : key;
+        if (
+          key === "alias" ||
+          key === "example" ||
+          key === "invalid-translation"
+        ) {
+          const finalKey =
+            key === "invalid-translation" ? "invalid_translation" : key;
           if (!result[finalKey]) result[finalKey] = [];
           result[finalKey].push(value);
         } else {
@@ -117,19 +129,19 @@ if (command === "terminology") {
       console.error("Invalid arguments: word must be Japanese");
       process.exit(1);
     }
-    if (!isThai(body.description)) {
-      console.error("Invalid arguments: description must be Thai");
+    if (!isEnglish(body.description)) {
+      console.error("Invalid arguments: description must be English");
       process.exit(1);
     }
-    if (!body.alias || !body.alias.some(isThai)) {
+    if (!body.alias || !body.alias.some(isEnglish)) {
       console.error(
-        "Invalid arguments: alias must include at least one Thai translation",
+        "Invalid arguments: alias must include at least one English translation",
       );
       process.exit(1);
     }
-    if (body.alias.filter(isThai).length > 1) {
+    if (body.alias.filter(isEnglish).length > 1) {
       console.error(
-        "Invalid arguments: alias must include at most one Thai translation",
+        "Invalid arguments: alias must include at most one English translation",
       );
       process.exit(1);
     }
@@ -153,18 +165,18 @@ if (command === "terminology") {
     } else if (
       Array.from(
         new Set([...(data[body.word]?.alias || []), ...body.alias]),
-      ).filter(isThai).length > 1
+      ).filter(isEnglish).length > 1
     ) {
       if (!body.overwrite) {
         console.error(
-          `Error: Key '${body.word}' already has a Thai alias, please use the same alias. Existing entry:`,
+          `Error: Key '${body.word}' already has an English alias, please use the same alias. Existing entry:`,
         );
         console.log(JSON.stringify({ [body.word]: data[body.word] }, null, 2));
         process.exit(1);
       } else {
         // Confirm overwrite
         const confirmed = await confirm(
-          `Warning: Key '${body.word}' already has a Thai alias. Overwriting may cause inconsistencies with previous chapter translations. Do you want to continue?`,
+          `Warning: Key '${body.word}' already has an English alias. Overwriting may cause inconsistencies with previous chapter translations. Do you want to continue?`,
         );
         if (!confirmed) {
           console.log("Operation canceled.");
@@ -172,7 +184,7 @@ if (command === "terminology") {
         }
       }
     }
-    
+
     data[body.word] = {
       ...data[body.word],
       description: body.description,
@@ -180,7 +192,10 @@ if (command === "terminology") {
         new Set([...(data[body.word]?.alias || []), ...body.alias]),
       ),
       invalid_translation: Array.from(
-        new Set([...(data[body.word]?.invalid_translation || []), ...(body.invalid_translation || [])]),
+        new Set([
+          ...(data[body.word]?.invalid_translation || []),
+          ...(body.invalid_translation || []),
+        ]),
       ),
     };
     fuse = new Fuse(
@@ -210,8 +225,8 @@ if (command === "terminology") {
       process.exit(1);
     }
     // Validate description if provided
-    if (body.description && !isThai(body.description)) {
-      console.error("Invalid arguments: description must be Thai");
+    if (body.description && !isEnglish(body.description)) {
+      console.error("Invalid arguments: description must be English");
       process.exit(1);
     }
     // Validate examples if provided
@@ -219,15 +234,15 @@ if (command === "terminology") {
       console.error("Invalid arguments: terminology does not have examples");
       process.exit(1);
     }
-    // Validate aliases - only NON-THAI allowed for update
+    // Validate aliases - only NON-ENGLISH allowed for update
     if (body.alias) {
       if (!body.alias.every((a: any) => typeof a === "string")) {
         console.error("Invalid arguments: alias must be strings");
         process.exit(1);
       }
-      if (body.alias.some(isThai)) {
+      if (body.alias.some(isEnglish)) {
         console.error(
-          "Invalid arguments: cannot add Thai alias via update. Thai alias can only be set during add.",
+          "Invalid arguments: cannot add English alias via update. English alias can only be set during add.",
         );
         process.exit(1);
       }
@@ -235,8 +250,15 @@ if (command === "terminology") {
     // Update fields
     const updated: Terminology = {
       description: body.description || existing.description,
-      alias: Array.from(new Set([...(existing.alias || []), ...(body.alias || [])])),
-      invalid_translation: Array.from(new Set([...(existing.invalid_translation || []), ...(body.invalid_translation || [])])),
+      alias: Array.from(
+        new Set([...(existing.alias || []), ...(body.alias || [])]),
+      ),
+      invalid_translation: Array.from(
+        new Set([
+          ...(existing.invalid_translation || []),
+          ...(body.invalid_translation || []),
+        ]),
+      ),
     };
     data[body.word] = updated;
     fuse = new Fuse(
@@ -278,31 +300,31 @@ if (command === "terminology") {
       console.error("Invalid arguments: name must be Japanese");
       process.exit(1);
     }
-    if (!isThai(body.description)) {
-      console.error("Invalid arguments: description must be Thai");
+    if (!isEnglish(body.description)) {
+      console.error("Invalid arguments: description must be English");
       process.exit(1);
     }
-    if (!isThai(body.base_style)) {
-      console.error("Invalid arguments: base_style must be Thai");
+    if (!isEnglish(body.base_style)) {
+      console.error("Invalid arguments: base_style must be English");
       process.exit(1);
     }
-    if (!isThai(body.negative_constraints)) {
-      console.error("Invalid arguments: negative_constraints must be Thai");
+    if (!isEnglish(body.negative_constraints)) {
+      console.error("Invalid arguments: negative_constraints must be English");
       process.exit(1);
     }
-    if (body.example && !body.example.every(isThai)) {
-      console.error("Invalid arguments: example must be Thai");
+    if (body.example && !body.example.every(isEnglish)) {
+      console.error("Invalid arguments: example must be English");
       process.exit(1);
     }
-    if (!body.alias || !body.alias.some(isThai)) {
+    if (!body.alias || !body.alias.some(isEnglish)) {
       console.error(
-        "Invalid arguments: alias must include at least one Thai translation",
+        "Invalid arguments: alias must include at least one English translation",
       );
       process.exit(1);
     }
-    if (body.alias.filter(isThai).length > 1) {
+    if (body.alias.filter(isEnglish).length > 1) {
       console.error(
-        "Invalid arguments: alias must include at most one Thai translation",
+        "Invalid arguments: alias must include at most one English translation",
       );
       process.exit(1);
     }
@@ -326,18 +348,18 @@ if (command === "terminology") {
     } else if (
       Array.from(
         new Set([...(data[body.name]?.alias || []), ...body.alias]),
-      ).filter(isThai).length > 1
+      ).filter(isEnglish).length > 1
     ) {
       if (!body.overwrite) {
         console.error(
-          `Error: Key '${body.name}' already has a Thai alias, please use the same alias. Existing entry:`,
+          `Error: Key '${body.name}' already has an English alias, please use the same alias. Existing entry:`,
         );
         console.log(JSON.stringify({ [body.name]: data[body.name] }, null, 2));
         process.exit(1);
       } else {
         // Confirm overwrite
         const confirmed = await confirm(
-          `Warning: Key '${body.name}' already has a Thai alias. Overwriting may cause inconsistencies with previous chapter translations. Do you want to continue?`,
+          `Warning: Key '${body.name}' already has an English alias. Overwriting may cause inconsistencies with previous chapter translations. Do you want to continue?`,
         );
         if (!confirmed) {
           console.log("Operation canceled.");
@@ -345,7 +367,7 @@ if (command === "terminology") {
         }
       }
     }
-    
+
     data[body.name] = {
       ...data[body.name],
       gender: body.gender,
@@ -357,7 +379,10 @@ if (command === "terminology") {
         new Set([...(data[body.name]?.alias || []), ...body.alias]),
       ),
       invalid_translation: Array.from(
-        new Set([...(data[body.name]?.invalid_translation || []), ...(body.invalid_translation || [])]),
+        new Set([
+          ...(data[body.name]?.invalid_translation || []),
+          ...(body.invalid_translation || []),
+        ]),
       ),
     };
     fuse = new Fuse(
@@ -385,35 +410,38 @@ if (command === "terminology") {
     }
     // Validate description if provided
     if (body.description) {
-      if (typeof body.description !== "string" || !isThai(body.description)) {
-        console.error("Invalid arguments: description must be Thai");
+      if (
+        typeof body.description !== "string" ||
+        !isEnglish(body.description)
+      ) {
+        console.error("Invalid arguments: description must be English");
         process.exit(1);
       }
     }
     // Validate base_style if provided
-    if (body.base_style && !isThai(body.base_style)) {
-      console.error("Invalid arguments: base_style must be Thai");
+    if (body.base_style && !isEnglish(body.base_style)) {
+      console.error("Invalid arguments: base_style must be English");
       process.exit(1);
     }
     // Validate negative_constraints if provided
-    if (body.negative_constraints && !isThai(body.negative_constraints)) {
-      console.error("Invalid arguments: negative_constraints must be Thai");
+    if (body.negative_constraints && !isEnglish(body.negative_constraints)) {
+      console.error("Invalid arguments: negative_constraints must be English");
       process.exit(1);
     }
-    // Validate examples if provided - must all be Thai
-    if (body.example && !body.example.every(isThai)) {
-      console.error("Invalid arguments: example must be Thai");
+    // Validate examples if provided - must all be English
+    if (body.example && !body.example.every(isEnglish)) {
+      console.error("Invalid arguments: example must be English");
       process.exit(1);
     }
-    // Validate aliases - only NON-THAI allowed for update
+    // Validate aliases - only NON-ENGLISH allowed for update
     if (body.alias) {
       if (!body.alias.every((a: any) => typeof a === "string")) {
         console.error("Invalid arguments: alias must be strings");
         process.exit(1);
       }
-      if (body.alias.some(isThai)) {
+      if (body.alias.some(isEnglish)) {
         console.error(
-          "Invalid arguments: cannot add Thai alias via update. Thai alias can only be set during add.",
+          "Invalid arguments: cannot add English alias via update. English alias can only be set during add.",
         );
         process.exit(1);
       }
@@ -433,7 +461,10 @@ if (command === "terminology") {
         new Set([...(existing.alias || []), ...(body.alias || [])]),
       ),
       invalid_translation: Array.from(
-        new Set([...(existing.invalid_translation || []), ...(body.invalid_translation || [])]),
+        new Set([
+          ...(existing.invalid_translation || []),
+          ...(body.invalid_translation || []),
+        ]),
       ),
     };
     data[body.name] = updated;
@@ -485,16 +516,16 @@ if (command === "terminology") {
 } else {
   console.log("Usage:");
   console.log(
-    'bun database.ts terminology add --word "日本語単語" --description "คำอธิบายภาษาไทย" --alias "คำแปลภาษาไทย" --invalid-translation "wrong_translation1" --invalid-translation "wrong_translation2"',
+    'bun database.ts terminology add --word "日本語単語" --description "English description" --alias "English translation" --invalid-translation "wrong_translation1" --invalid-translation "wrong_translation2"',
   );
   console.log(
-    'bun database.ts terminology update --word "日本語単語" --description "คำอธิบายใหม่" --alias "EnglishAlias"',
+    'bun database.ts terminology update --word "日本語単語" --description "New description" --alias "EnglishAlias"',
   );
   console.log(
-    'bun database.ts personas add --name "日本語名前" --gender "ชาย" --description "คำอธิบายบุคลิก" --base_style "สไตล์การพูด" --negative_constraints "ข้อจำกัด" --example "ตัวอย่างประโยค" --alias "ชื่อภาษาไทย" --invalid-translation "wrong_translation"',
+    'bun database.ts personas add --name "日本語名前" --gender "male" --description "Character description" --base_style "Speaking style" --negative_constraints "Constraints" --example "Example sentence" --alias "EnglishName" --invalid-translation "wrong_translation"',
   );
   console.log(
-    'bun database.ts personas update --name "日本語名前" --gender "ชาย" --description "คำอธิบายใหม่" --base_style "สไตล์ใหม่" --negative_constraints "ข้อจำกัดใหม่" --example "ตัวอย่างเพิ่มเติม" --alias "EnglishAlias"',
+    'bun database.ts personas update --name "日本語名前" --gender "male" --description "New description" --base_style "New style" --negative_constraints "New constraints" --example "Additional example" --alias "EnglishAlias"',
   );
   console.log("bun database.ts search 'query'");
   console.log("bun database.ts save [filename]");

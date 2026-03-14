@@ -1,6 +1,7 @@
 import { Glob } from "bun";
 import { readFileSync, writeFileSync } from "fs";
 import { JSDOM } from "jsdom";
+import { isEnglish } from "./utils";
 
 const glob = new Glob("books/**/*html");
 const files = Array.from(glob.scanSync(".")) as string[];
@@ -8,8 +9,7 @@ const files = Array.from(glob.scanSync(".")) as string[];
 files.toSorted().forEach(async (file) => {
   if (!file.endsWith("html")) return;
   const rawHTML = readFileSync(file, "utf-8");
-  const isThai = /\p{sc=Thai}/u.test(rawHTML);
-  if (!isThai) return;
+  if (!isEnglish(rawHTML)) return;
   const body = new JSDOM(rawHTML).window.document.body.textContent;
   const lines: string[] = body
     .split("\n")
@@ -38,16 +38,6 @@ files.toSorted().forEach(async (file) => {
             .replaceAll("】", '"')
             .replaceAll("（", " (")
             .replaceAll("）", ") ")
-            .replaceAll("๑", "1")
-            .replaceAll("๒", "2")
-            .replaceAll("๓", "3")
-            .replaceAll("๔", "4")
-            .replaceAll("๕", "5")
-            .replaceAll("๖", "6")
-            .replaceAll("๗", "7")
-            .replaceAll("๘", "8")
-            .replaceAll("๙", "9")
-            .replaceAll("๐", "0")
             .replaceAll("１", "1")
             .replaceAll("２", "2")
             .replaceAll("３", "3")

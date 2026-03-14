@@ -6,6 +6,8 @@
   "scripts": {
     "start": "./start.bat",
     "database": "bun database.ts",
+    "extract-non-english": "bun extract-non-english.ts",
+    "extract-english": "bun extract-english.ts",
     "typecheck": "bun run tsc --noEmit",
     "format": "bun run prettier --write ."
   },

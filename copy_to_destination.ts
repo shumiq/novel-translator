@@ -2,8 +2,7 @@ import { cpSync, existsSync, mkdirSync, readdirSync } from "fs";
 import { join } from "path";
 
 const sourceDir = "./json";
-const destination =
-  "R:\\Drive\\WebBooks\\syosetu\\เทคนิคการบริหารจัดการดันเจี้ยนให้ชนะใส";
+const destination = "R:\\Drive\\WebBooks\\syosetu\\ราชินีนักล่าค่าประสบการณ์";
 
 // Ensure destination directory exists
 if (!existsSync(destination)) {

@@ -35,8 +35,8 @@ novel-translator/
 ├── start.bat                # Batch file to run the continuous runner
 ├── runner.ts                # Main automation script
 ├── database.ts              # Database CLI implementation
-├── extract-thai.ts          # Extract Thai files
-├── extract-non-thai.ts      # Extract non-Thai files
+├── extract-english.ts       # Extract files with English text
+├── extract-non-english.ts   # Extract files without English text
 ├── sanitize.ts              # Sanitize HTML files
 ├── stage_parity_translated.ts # Git parity check
 ├── add_progress.ts          # Progress tracking
@@ -45,9 +45,9 @@ novel-translator/
 
 ## Agents
 
-1.  **Translate Agent** (`01_translator_agent.md`): Translates raw Japanese/non-Thai content into Thai, discovers new terms/personas, and ensures structural integrity.
+1.  **Translate Agent** (`01_translator_agent.md`): Translates raw Japanese/non-English content into English, discovers new terms/personas, and ensures structural integrity.
 2.  **Consistency Agent** (`02_consistency_agent.md`): Ensures strict continuity by enforcing terminology, gender pronouns, and persona constraints from the database.
-3.  **Editor Agent** (`03_editor_agent.md`): Refines translated text for natural Thai prose, removes artifacts, and optimizes particles/royal vocabulary.
+3.  **Editor Agent** (`03_editor_agent.md`): Refines translated text for natural English prose, removes artifacts, and optimizes dialogue flow.
 4.  **Japanese Purifier Agent** (`04_japanese_purifier_agent.md`): Hunts down and eliminates any remaining Japanese text.
 
 ## Database CLI
@@ -60,10 +60,10 @@ Manage terminology and personas using `bun database.ts`.
 bun database.ts search "query"
 
 # Add new terminology
-bun database.ts terminology add --word "ジラソーレ" --description "ชื่อปาร์ตี้..." --alias "Girasole" --alias "จิราโซเล่"
+bun database.ts terminology add --word "ジラソーレ" --description "Adventurer party name..." --alias "Girasole" --alias "Sunflower"
 
 # Add new persona
-bun database.ts personas add --name "豊海　航" --gender "ชาย" --description "ตัวละครหลัก..." --base_style "พูดจาแบบคนรุ่นใหม่..." --negative_constraints "อย่าใช้คำราชาศัพท์..." --example "สวัสดีครับ..." --alias "Toyoumi Wataru" --alias "โทโยมิ วาตารุ"
+bun database.ts personas add --name "豊海　航" --gender "male" --description "Main character..." --base_style "Speaks like a modern young person..." --negative_constraints "Do not use archaic language..." --example "Hello, my name is Wataru." --alias "Toyoumi Wataru" --alias "Wataru Toyoumi"
 ```
 
 See [database.readme.md](database.readme.md) for detailed CLI commands.
@@ -72,17 +72,17 @@ See [database.readme.md](database.readme.md) for detailed CLI commands.
 
 1.  Place your novel EPUB files in the `books/` directory.
 2.  **Option A (Automated Runner):** Run `bun start` or `start.bat`. This script automatically:
-    *   Checks for non-Thai files to translate.
+    *   Checks for files without English text to translate.
     *   Runs the Translate Agent.
-    *   Checks for Thai files needing consistency check.
+    *   Checks for English files needing consistency check.
     *   Runs the Consistency Agent.
-    *   Checks for Thai files needing editing.
+    *   Checks for English files needing editing.
     *   Runs the Editor Agent.
     *   Sanitizes and stages files with parity checks.
 3.  **Option B (Manual Steps):**
     *   **Extract Files:**
-        *   `bun run extract-non-thai`: List files without Thai text.
-        *   `bun run extract-thai`: List files with Thai text.
+        *   `bun run extract-non-english`: List files without English text.
+        *   `bun run extract-english`: List files with English text.
     *   **Process Files:** Run specific agents based on the agent guides.
     *   **Manage Database:** Use `bun run database` for CLI access.
 
@@ -90,8 +90,8 @@ See [database.readme.md](database.readme.md) for detailed CLI commands.
 
 - `bun run start`: Runs `start.bat` (continuous runner).
 - `bun run database`: Run database CLI.
-- `bun run extract-non-thai`: Output list of non-Thai files.
-- `bun run extract-thai`: Output list of Thai files.
+- `bun run extract-non-english`: Output list of files needing translation.
+- `bun run extract-english`: Output list of translated files.
 - `bun run typecheck`: Type check with TypeScript.
 - `bun run format`: Format code with Prettier.
 

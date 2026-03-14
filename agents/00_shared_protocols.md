@@ -11,7 +11,7 @@ AI agents naturally forget instructions after processing multiple files (10+ cha
 - **Windows Command Separator:** When running multiple commands in a single line on Windows, use `;` as the separator instead of `&&`.
 - **Database Synchronization:** Never wait until the end of a file to update the DB. Sync every new term/persona *immediately*.
 - **Database Filter:** DO NOT add generic words ("the", "is", "sword"). Only add proper nouns, technical terms, and unique expressions.
-- **Key Consistency:** Always use the **Japanese** word as the primary key and the **Thai** translation in the `alias` field. Use `--overwrite` only if correcting a known error.
+- **Key Consistency:** Always use the **Japanese** word as the primary key and the **English** translation in the `alias` field. Use `--overwrite` only if correcting a known error.
 
 ## ⚠️ Strict Rules for All Agents
 - **Structural Integrity:** Do not alter HTML tags (`<p>`, `<div>`, etc.). Only modify the text content within them.

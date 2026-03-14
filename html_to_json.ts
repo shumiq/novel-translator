@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync, writeFileSync } from "fs";
 import { JSDOM } from "jsdom";
+import { isEnglish } from "./utils";
 
 const meta = JSON.parse(readFileSync("./json/meta.json", "utf-8")) as {
   id: string;
@@ -17,10 +18,10 @@ await Promise.all(
     const ch = Number(file.split(".")[0]);
     if (isNaN(ch)) return;
     const rawHtml = readFileSync(`./books/${file}`, "utf-8");
-    const isThai = /\p{sc=Thai}/u.test(rawHtml);
-    if (!isThai) return;
-    const title =
-      new JSDOM(rawHtml).window.document.querySelector("p")?.textContent || "";
+    const document = new JSDOM(rawHtml).window.document;
+    const text = document.body.textContent ?? "";
+    if (!isEnglish(text)) return;
+    const title = document.querySelector("p")?.textContent || "";
     const json = {
       title,
       content: rawHtml.split("\n").slice(1).join("\n"),

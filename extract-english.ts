@@ -1,6 +1,7 @@
 import { Glob } from "bun";
 import { existsSync, readFileSync } from "fs";
 import { JSDOM } from "jsdom";
+import { isEnglish } from "./utils";
 
 const glob = new Glob("books/**/*html");
 const files = Array.from(glob.scanSync(".")) as string[];
@@ -30,8 +31,8 @@ for (const file of files.sort((a, b) =>
   if (!file.endsWith("html") || filterOut.includes(file.replaceAll("\\", "/")))
     continue;
   const rawHTML = readFileSync(file, "utf-8");
-  const isThai = /\p{sc=Thai}/u.test(rawHTML);
-  if (!isThai) continue;
+  const text = new JSDOM(rawHTML).window.document.body.textContent ?? "";
+  if (!isEnglish(text)) continue;
   const document = new JSDOM(rawHTML).window.document;
   const lines: string[] = document.body.textContent
     ?.split("\n")
