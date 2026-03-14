@@ -4,20 +4,20 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "start": "./start.bat",
     "database": "bun database.ts",
-    "extract": "bun extract.ts",
     "typecheck": "bun run tsc --noEmit",
     "format": "bun run prettier --write ."
   },
   "devDependencies": {
-    "@types/bun": "latest",
-    "@types/jsdom": "^27.0.0"
+    "@types/bun": "^1.3.10",
+    "@types/jsdom": "^28.0.0"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "fuse.js": "^7.1.0",
-    "jsdom": "^27.4.0"
+    "jsdom": "^28.1.0"
   }
 }

@@ -5,7 +5,7 @@ import { JSDOM } from "jsdom";
 const glob = new Glob("books/**/*html");
 const files = Array.from(glob.scanSync(".")) as string[];
 
-const limit = 10;
+const limit = 5;
 let count = 0;
 
 for (const file of files.sort((a, b) =>
@@ -23,7 +23,6 @@ for (const file of files.sort((a, b) =>
     .map((el) => el.textContent.trim())
     .filter(Boolean);
   if (lines.length === 0) continue;
-  count++;
+  if (count++ >= limit) break;
   console.log(file);
-  if (count > limit) break;
 }

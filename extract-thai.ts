@@ -8,23 +8,27 @@ const files = Array.from(glob.scanSync(".")) as string[];
 // Parse command line arguments for --progress flag
 const args = process.argv.slice(2);
 const progressArgIndex = args.indexOf("--progress");
-const progressFileArg = progressArgIndex !== -1 ? args[progressArgIndex + 1] : undefined;
-const filterOutFile = progressFileArg || "progress.txt";
+const progressFileArg =
+  progressArgIndex !== -1 ? args[progressArgIndex + 1] : undefined;
+const filterOutFile = progressFileArg
+  ? `${progressFileArg}_progress.txt`
+  : "progress.txt";
 
 // Filter out
 const filterOut = existsSync(filterOutFile)
-  ? readFileSync(filterOutFile, "utf-8")
+  ? readFileSync(filterOutFile, "utf-8").replaceAll("\\", "/")
   : "";
 
 let count = 0;
-const limit = 10;
+const limit = 5;
 for (const file of files.sort((a, b) =>
   a.split("\\").length > 2
     ? a.localeCompare(b)
     : Number(a.split("\\").at(-1)?.split(".")[0]) -
       Number(b.split("\\").at(-1)?.split(".")[0]),
 )) {
-  if (!file.endsWith("html") || filterOut.includes(file)) continue;
+  if (!file.endsWith("html") || filterOut.includes(file.replaceAll("\\", "/")))
+    continue;
   const rawHTML = readFileSync(file, "utf-8");
   const isThai = /\p{sc=Thai}/u.test(rawHTML);
   if (!isThai) continue;
@@ -34,6 +38,6 @@ for (const file of files.sort((a, b) =>
     .map((el) => el.trim())
     .filter(Boolean);
   if (lines.length === 0) continue;
-  if (count++ > limit) break;
+  if (count++ >= limit) break;
   console.log(file);
 }

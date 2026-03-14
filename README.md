@@ -6,8 +6,9 @@ A tool for processing and translating novels from EPUB/HTML formats, with databa
 
 - Extract text from EPUB HTML files
 - Database for storing terminology and personas
-- Agents for extracting data, translating, grooming content, refining particles, and fixing mixed language files
+- Agents for translating, consistency checking, editing, and purifying Japanese text
 - Progress tracking for incremental processing
+- Automated runner for end-to-end workflow
 
 ## Installation
 
@@ -17,40 +18,81 @@ To install dependencies:
 bun install
 ```
 
-## Usage
+## Project Structure
 
-1. Place your novel EPUB files in the `books/` directory.
-
-2. Generate lists of files to process:
-
-```bash
-bun run extract-non-thai  # For files without Thai text
-bun run extract-thai      # For files with Thai text
-bun run validate_japanese # For files with mixed Japanese and Thai
+```
+novel-translator/
+├── agents/                  # Agent guides and protocols
+│   ├── 00_shared_protocols.md
+│   ├── 01_translator_agent.md
+│   ├── 02_consistency_agent.md
+│   ├── 03_editor_agent.md
+│   └── 04_japanese_purifier_agent.md
+├── books/                   # EPUB/HTML files to process
+├── database.readme.md       # Database CLI documentation
+├── package.json
+├── README.md
+├── start.bat                # Batch file to run the continuous runner
+├── runner.ts                # Main automation script
+├── database.ts              # Database CLI implementation
+├── extract-thai.ts          # Extract Thai files
+├── extract-non-thai.ts      # Extract non-Thai files
+├── sanitize.ts              # Sanitize HTML files
+├── stage_parity_translated.ts # Git parity check
+├── add_progress.ts          # Progress tracking
+└── list_characters.ts       # List characters from DB
 ```
 
-3. Use the database CLI for managing terminology and personas:
+## Agents
 
+1.  **Translate Agent** (`01_translator_agent.md`): Translates raw Japanese/non-Thai content into Thai, discovers new terms/personas, and ensures structural integrity.
+2.  **Consistency Agent** (`02_consistency_agent.md`): Ensures strict continuity by enforcing terminology, gender pronouns, and persona constraints from the database.
+3.  **Editor Agent** (`03_editor_agent.md`): Refines translated text for natural Thai prose, removes artifacts, and optimizes particles/royal vocabulary.
+4.  **Japanese Purifier Agent** (`04_japanese_purifier_agent.md`): Hunts down and eliminates any remaining Japanese text.
+
+## Database CLI
+
+Manage terminology and personas using `bun database.ts`.
+
+**Common Commands:**
 ```bash
-bun run database
+# Search for terms or personas
+bun database.ts search "query"
+
+# Add new terminology
+bun database.ts terminology add --word "ジラソーレ" --description "ชื่อปาร์ตี้..." --alias "Girasole" --alias "จิราโซเล่"
+
+# Add new persona
+bun database.ts personas add --name "豊海　航" --gender "ชาย" --description "ตัวละครหลัก..." --base_style "พูดจาแบบคนรุ่นใหม่..." --negative_constraints "อย่าใช้คำราชาศัพท์..." --example "สวัสดีครับ..." --alias "Toyoumi Wataru" --alias "โทโยมิ วาตารุ"
 ```
 
 See [database.readme.md](database.readme.md) for detailed CLI commands.
 
-4. Follow the agent guides for processing:
-   - [Extracting Data Agent](extracting_data_agent.md)
-   - [Translate Agent](translate_agent.md)
-   - [Grooming Agent](grooming_agent.md)
-   - [Particle Refine Agent](particle_refine.md)
-   - [JPTH Refine Agent](jpth-refine.md)
+## Usage Workflow
+
+1.  Place your novel EPUB files in the `books/` directory.
+2.  **Option A (Automated Runner):** Run `bun start` or `start.bat`. This script automatically:
+    *   Checks for non-Thai files to translate.
+    *   Runs the Translate Agent.
+    *   Checks for Thai files needing consistency check.
+    *   Runs the Consistency Agent.
+    *   Checks for Thai files needing editing.
+    *   Runs the Editor Agent.
+    *   Sanitizes and stages files with parity checks.
+3.  **Option B (Manual Steps):**
+    *   **Extract Files:**
+        *   `bun run extract-non-thai`: List files without Thai text.
+        *   `bun run extract-thai`: List files with Thai text.
+    *   **Process Files:** Run specific agents based on the agent guides.
+    *   **Manage Database:** Use `bun run database` for CLI access.
 
 ## Scripts
 
-- `bun run extract-non-thai`: Output the list of non-Thai files to be translated
-- `bun run extract-thai`: Output the list of Thai files for grooming
-- `bun run validate_japanese`: Output files with mixed Japanese and Thai text
-- `bun run database`: Run database CLI
-- `bun run typecheck`: Type check with TypeScript
-- `bun run format`: Format code with Prettier
+- `bun run start`: Runs `start.bat` (continuous runner).
+- `bun run database`: Run database CLI.
+- `bun run extract-non-thai`: Output list of non-Thai files.
+- `bun run extract-thai`: Output list of Thai files.
+- `bun run typecheck`: Type check with TypeScript.
+- `bun run format`: Format code with Prettier.
 
 This project was created using `bun init` in bun v1.3.5. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.

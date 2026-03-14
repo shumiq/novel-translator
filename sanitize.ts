@@ -5,17 +5,17 @@ import { JSDOM } from "jsdom";
 const glob = new Glob("books/**/*html");
 const files = Array.from(glob.scanSync(".")) as string[];
 
-for (const file of files.toSorted()) {
-  if (!file.endsWith("html")) continue;
+files.toSorted().forEach(async (file) => {
+  if (!file.endsWith("html")) return;
   const rawHTML = readFileSync(file, "utf-8");
   const isThai = /\p{sc=Thai}/u.test(rawHTML);
-  if (!isThai) continue;
+  if (!isThai) return;
   const body = new JSDOM(rawHTML).window.document.body.textContent;
   const lines: string[] = body
     .split("\n")
     .map((el) => el.trim())
     .filter(Boolean);
-  if (lines.length === 0) continue;
+  if (lines.length === 0) return;
   console.log(`Sanitizing ${file}`);
   writeFileSync(
     file,
@@ -60,8 +60,9 @@ for (const file of files.toSorted()) {
             .replaceAll("０", "0")
             .replaceAll("…", "...")
             .replaceAll("—", "—")
+            .replaceAll(/\.\.\.\.+/g, "...")
             .trim()}</p>`,
       )
       .join("\n"),
   );
-}
+});

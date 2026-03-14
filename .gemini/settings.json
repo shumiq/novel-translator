@@ -2,22 +2,29 @@
   "general": {
     "defaultApprovalMode": "auto_edit",
     "sessionRetention": {
-      "enabled": true
+      "enabled": true,
+      "maxAge": "24h"
     }
   },
   "experimental": {
-    "modelSteering": true
+    "modelSteering": true,
+    "plan": false
   },
   "security": {
     "enablePermanentToolApproval": true
   },
   "tools": {
     "shell": {
-      "showColor": true
-    }
+      "showColor": true,
+      "enableInteractiveShell": false
+    },
+    "disableLLMCorrection": false
   },
   "context": {
     "loadMemoryFromIncludeDirectories": true
+  },
+  "model": {
+    "name": "gemini-3-flash-preview"
   },
   "ui": {
     "loadingPhrases": "off",
@@ -39,5 +46,14 @@
     "grep",
     "type",
     "sed"
-  ]
+  ],
+  "ide": {
+    "enabled": true
+  },
+  "billing": {
+    "overageStrategy": "always"
+  },
+  "advanced": {
+    "autoConfigureMemory": true
+  }
 }
