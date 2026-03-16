@@ -4,11 +4,15 @@
     "sessionRetention": {
       "enabled": true,
       "maxAge": "24h"
+    },
+    "plan": {
+      "modelRouting": false
     }
   },
   "experimental": {
     "modelSteering": true,
-    "plan": true
+    "plan": true,
+    "directWebFetch": true
   },
   "security": {
     "enablePermanentToolApproval": true
@@ -48,10 +52,10 @@
     "sed"
   ],
   "ide": {
-    "enabled": true
+    "enabled": false
   },
   "billing": {
-    "overageStrategy": "always"
+    "overageStrategy": "never"
   },
   "advanced": {
     "autoConfigureMemory": true

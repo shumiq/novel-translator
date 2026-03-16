@@ -1,57 +1,70 @@
 import { execSync } from "child_process";
 
 function runWorkflow(
-  workflow: string,
+  skillName: string,
   queueCmd: string,
   agent: "gemini" | "opencode" | "kilo" = "gemini",
 ) {
-  console.log(`>>>>>>>>> Running ${workflow}`);
+  console.log(`>>>>>>>>> Running ${skillName}`);
   console.log(`>>>>>>>>> ${new Date().toLocaleString()}`);
+  
   const queue = execSync(queueCmd)
     .toString()
     .replaceAll("\\", "/")
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean);
+    
   if (queue.length > 0) {
-    const prompt = `execute ${workflow} to these files: ${queue.map((file) => `${file}`).join(" , ")}`;
-    console.log(`>>>>>>>>> ${workflow}: ${prompt}`);
+    // 💡 NEW: Tell the agent to use the skill by name, rather than reading a file path
+    const prompt = `Use the '${skillName}' skill to process these files: ${queue.join(", ")}`;
+    
+    console.log(`>>>>>>>>> ${skillName}: ${prompt}`);
     try {
       if (agent === "gemini")
         execSync(`gemini --yolo --prompt "${prompt}"`, { stdio: "inherit" });
       if (agent === "opencode")
-        execSync(`opencode run "${prompt} "`, { stdio: "inherit" });
+        execSync(`opencode run "${prompt}"`, { stdio: "inherit" });
       if (agent === "kilo")
-        execSync(
-          `kilo run "${prompt} " --model kilo/openrouter/hunter-alpha`,
-          { stdio: "inherit" },
-        );
+        execSync(`kilo run "${prompt}" --model kilo/openrouter/hunter-alpha`, {
+          stdio: "inherit",
+        });
+        
       execSync("bun sanitize.ts");
       execSync("bun stage_parity_translated.ts");
       execSync("git add consistency_progress.txt");
       execSync("git add editor_progress.txt");
       execSync("git add novel_data.json");
       // execSync("git commit --amend --no-edit");
-    } catch {}
+    } catch (e) {
+      console.error(`>>>>>>>>> Error executing ${skillName} workflow:`, e);
+    }
+  } else {
+    console.log(`>>>>>>>>> Queue is empty. Skipping ${skillName}.`);
   }
 }
 
-console.clear()
+console.clear();
+
+// 💡 NEW: Use the actual Skill Names (must match the `name:` in your SKILL.md YAML frontmatter)
 runWorkflow(
-  "agents/01_translator_agent.md",
+  "translator",
   "bun extract-non-thai.ts",
   "gemini",
 );
+
 runWorkflow(
-  "agents/02_consistency_agent.md",
+  "consistency",
   "bun extract-thai.ts --progress consistency",
-  "kilo",
+  "opencode",
 );
+
 runWorkflow(
-  "agents/03_editor_agent.md",
+  "editor",
   "bun extract-thai.ts --progress editor",
-  "kilo",
+  "opencode",
 );
+
 execSync("bun html_to_json.ts");
 execSync("git add json");
 execSync("bun copy_to_destination.ts");
