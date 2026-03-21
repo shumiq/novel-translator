@@ -10,12 +10,13 @@
     }
   },
   "experimental": {
-    "modelSteering": true,
+    "modelSteering": false,
     "plan": true,
-    "directWebFetch": true
+    "directWebFetch": false
   },
   "security": {
-    "enablePermanentToolApproval": true
+    "enablePermanentToolApproval": true,
+    "autoAddToPolicyByDefault": true
   },
   "tools": {
     "shell": {
@@ -25,6 +26,10 @@
     "disableLLMCorrection": false
   },
   "context": {
+    "fileName": [
+      "GEMINI.md",
+      "CHARACTERS.md"
+    ],
     "loadMemoryFromIncludeDirectories": true
   },
   "model": {
@@ -55,7 +60,7 @@
     "enabled": false
   },
   "billing": {
-    "overageStrategy": "never"
+    "overageStrategy": "always"
   },
   "advanced": {
     "autoConfigureMemory": true

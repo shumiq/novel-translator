@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import { isThai } from "./utils";
 
 interface CharacterData {
   gender?: string;
@@ -7,6 +8,7 @@ interface CharacterData {
   description?: string;
   negative_constraints?: string;
   example?: Array<{ input: string; output: string } | string>;
+  invalid_translation?: string[];
 }
 
 interface NovelData {
@@ -26,73 +28,73 @@ function getThaiAlias(aliases: string[] | undefined): string {
   if (!aliases || aliases.length === 0) return "ไม่มีชื่อ";
 
   // Find the first Thai alias (contains Thai characters)
-  const thaiAlias = aliases.find((alias) => /[\u0E00-\u0E7F]/.test(alias));
+  const thaiAlias = aliases.find((alias) => isThai(alias));
   return thaiAlias || aliases[0]!;
 }
 
 // Group characters by gender
-const maleCharacters: Array<{
-  name: string;
+const allCharacters: Array<{
+  originalJapanese: string;
   alias: string;
+  gender: string;
   description: string;
-}> = [];
-const femaleCharacters: Array<{
-  name: string;
-  alias: string;
-  description: string;
-}> = [];
-const unknownCharacters: Array<{
-  name: string;
-  alias: string;
-  description: string;
+  style: string;
+  invalidTranslation?: string[];
 }> = [];
 
 characters.forEach(([key, value]) => {
   const thaiAlias = getThaiAlias(value.alias);
-  const description =
-    [value.description, value.base_style, value.negative_constraints]
-      .filter(Boolean)
-      .join(" ") || "ไม่มีคำอธิบาย";
+  const style =
+    [value.base_style, value.negative_constraints].filter(Boolean).join(" ") ||
+    "ไม่ระบุ";
 
   const characterInfo = {
-    name: key,
+    originalJapanese: key,
     alias: thaiAlias,
-    description: description,
+    gender: value.gender || "ไม่ระบุ",
+    description: value.description || "ไม่มีข้อมูล",
+    style: style,
+    invalidTranslation: value.invalid_translation,
   };
 
-  if (value.gender === "ชาย") {
-    maleCharacters.push(characterInfo);
-  } else if (value.gender === "หญิง") {
-    femaleCharacters.push(characterInfo);
-  } else {
-    unknownCharacters.push(characterInfo);
-  }
+  allCharacters.push(characterInfo);
 });
 
 // Output results
-let output = "";
+let output = "# Characters\n\n";
 
-if (maleCharacters.length > 0) {
-  output += "[ชาย]\n";
-  maleCharacters.forEach((char) => {
-    output += `- ${char.alias} (ชาย)\t${char.description}\n`;
+function createTable(
+  characters: Array<{
+    originalJapanese: string;
+    alias: string;
+    gender: string;
+    description: string;
+    style: string;
+    invalidTranslation?: string[];
+  }>,
+): string {
+  if (characters.length === 0) return "";
+
+  let table =
+    "| Original Japanese | Thai Alias | Gender | Description | Style | Invalid Translation |\n";
+  table +=
+    "|-------------------|------------|--------|-------------|-------|---------------------|\n";
+
+  characters.forEach((char) => {
+    const invalid =
+      char.invalidTranslation && char.invalidTranslation.length > 0
+        ? char.invalidTranslation.join(", ")
+        : "-";
+    table += `| ${char.originalJapanese} | ${char.alias} | ${char.gender} | ${char.description} | ${char.style} | ${invalid} |\n`;
   });
+
+  table += "\n";
+  return table;
 }
 
-if (femaleCharacters.length > 0) {
-  output += "=========================\n";
-  output += "[หญิง]\n";
-  femaleCharacters.forEach((char) => {
-    output += `- ${char.alias} (หญิง)\t${char.description}\n`;
-  });
-}
+output += createTable(allCharacters);
 
-if (unknownCharacters.length > 0) {
-  output += "=========================\n";
-  output += "[ไม่ทราบ]\n";
-  unknownCharacters.forEach((char) => {
-    output += `- ${char.alias} (ไม่ทราบเพศ)\t${char.description}\n`;
-  });
-}
+// Write to .gemini/CHARACTERS.md
+fs.writeFileSync(".gemini/CHARACTERS.md", output);
 
-console.log(output);
+console.log("Character list updated in .gemini/CHARACTERS.md");

@@ -1,12 +1,12 @@
 import { cpSync, existsSync, mkdirSync, readdirSync } from "fs";
 import { join } from "path";
 
-const sourceDir = "./json";
-const destination = process.env.TARGET_FOLDER ?? "";
+const sourceDir = process.env.TARGET_FOLDER ?? "";
+const destination = "./json";
 
 if (!process.env.TARGET_FOLDER || !existsSync(sourceDir)) process.exit(1);
 
-console.log(`Copy JSON to ${destination}`);
+console.log(`Copy JSON from ${sourceDir}`);
 
 // Ensure destination directory exists
 if (!existsSync(destination)) {

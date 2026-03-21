@@ -7,6 +7,7 @@ import { existsSync, readFileSync, writeFileSync } from "fs";
  */
 function resetInvalidTranslatedFiles() {
   try {
+    execSync(`bun sanitize.ts`, { stdio: "inherit" });
     // Get diff stats for all modified files in books folder
     // Format: <additions>\t<deletions>\t<filename>
     const diffOutput = execSync("git diff --numstat -- books/", {
@@ -50,17 +51,17 @@ function resetInvalidTranslatedFiles() {
           const content = readFileSync("consistency_progress.txt", "utf-8");
           writeFileSync(
             "consistency_progress.txt",
-            content.replaceAll(filename.replaceAll("/", "\\"), ""),
+            content.replaceAll(filename.replaceAll("\\", "/"), ""),
           );
         }
         if (
-          existsSync("editor_progress.txt") &&
-          execSync("git diff editor_progress.txt", { encoding: "utf-8" }).trim()
+          existsSync("polish_progress.txt") &&
+          execSync("git diff polish_progress.txt", { encoding: "utf-8" }).trim()
         ) {
-          const content = readFileSync("editor_progress.txt", "utf-8");
+          const content = readFileSync("polish_progress.txt", "utf-8");
           writeFileSync(
-            "editor_progress.txt",
-            content.replaceAll(filename.replaceAll("/", "\\"), ""),
+            "polish_progress.txt",
+            content.replaceAll(filename.replaceAll("\\", "/"), ""),
           );
         }
       } else {
@@ -68,50 +69,6 @@ function resetInvalidTranslatedFiles() {
         execSync(`git add "${filename}"`, { encoding: "utf-8" });
         skippedCount++;
       }
-    }
-    if (existsSync("consistency_progress.txt")) {
-      const content = readFileSync("consistency_progress.txt", "utf-8");
-      writeFileSync(
-        "consistency_progress.txt",
-        Array.from(
-          new Set(
-            content
-              .replaceAll(".htmlbooks", ".html\nbooks")
-              .replaceAll("\\", "/")
-              .split("\n")
-              .map((line) => line.trim())
-              .filter(Boolean),
-          ),
-        )
-          .toSorted(
-            (a, b) =>
-              Number(a.replaceAll(/[^0-9]/g, "")) -
-              Number(b.replaceAll(/[^0-9]/g, "")),
-          )
-          .join("\n"),
-      );
-    }
-    if (existsSync("editor_progress.txt")) {
-      const content = readFileSync("editor_progress.txt", "utf-8");
-      writeFileSync(
-        "editor_progress.txt",
-        Array.from(
-          new Set(
-            content
-              .replaceAll(".htmlbooks", ".html\nbooks")
-              .replaceAll("\\", "/")
-              .split("\n")
-              .map((line) => line.trim())
-              .filter(Boolean),
-          ),
-        )
-          .toSorted(
-            (a, b) =>
-              Number(a.replaceAll(/[^0-9]/g, "")) -
-              Number(b.replaceAll(/[^0-9]/g, "")),
-          )
-          .join("\n"),
-      );
     }
     console.log("\n" + "=".repeat(50));
     console.log(`Summary:`);
@@ -134,3 +91,50 @@ function resetInvalidTranslatedFiles() {
 
 // Run the function
 resetInvalidTranslatedFiles();
+
+if (existsSync("consistency_progress.txt")) {
+  const content = readFileSync("consistency_progress.txt", "utf-8");
+  writeFileSync(
+    "consistency_progress.txt",
+    Array.from(
+      new Set(
+        content
+          .replaceAll("\\", "/")
+          .replaceAll("D:/Projects/novel-translator/", "")
+          .replaceAll(".htmlbooks", ".html\nbooks")
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean),
+      ),
+    )
+      .toSorted(
+        (a, b) =>
+          Number(a.replaceAll(/[^0-9]/g, "")) -
+          Number(b.replaceAll(/[^0-9]/g, "")),
+      )
+      .join("\n"),
+  );
+}
+if (existsSync("polish_progress.txt")) {
+  const content = readFileSync("polish_progress.txt", "utf-8");
+  writeFileSync(
+    "polish_progress.txt",
+    Array.from(
+      new Set(
+        content
+          .replaceAll("\\", "/")
+          .replaceAll("D:/Projects/novel-translator/", "")
+          .replaceAll(".htmlbooks", ".html\nbooks")
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean),
+      ),
+    )
+      .toSorted(
+        (a, b) =>
+          Number(a.replaceAll(/[^0-9]/g, "")) -
+          Number(b.replaceAll(/[^0-9]/g, "")),
+      )
+      .join("\n"),
+  );
+}

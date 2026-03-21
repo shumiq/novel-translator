@@ -6,7 +6,6 @@ import {
   writeFileSync,
 } from "fs";
 import { JSDOM } from "jsdom";
-import { isThai } from "./utils";
 
 const jsonFiles = readdirSync("./json");
 
@@ -22,7 +21,7 @@ jsonFiles.forEach(async (file) => {
     title: string;
     content: string;
   };
-  if (isThai(data.content)) return;
+  // if (isThai(data.content)) return;
   const document = new JSDOM(data.content).window.document;
   const lines: string[] = Array.from(document.body.querySelectorAll("p"))
     .map((el) => el.textContent.trim())

@@ -1,68 +1,29 @@
-import { Glob } from "bun";
-import { readFileSync, writeFileSync } from "fs";
-import { JSDOM } from "jsdom";
-import { isThai } from "./utils";
+import { execSync } from "child_process";
+import { sanitize } from "./utils";
 
-const glob = new Glob("books/**/*html");
-const files = Array.from(glob.scanSync(".")) as string[];
+const file = process.argv[2];
 
-files.toSorted().forEach(async (file) => {
-  if (!file.endsWith("html")) return;
-  const rawHTML = readFileSync(file, "utf-8");
-  if (!isThai(rawHTML)) return;
-  const body = new JSDOM(rawHTML).window.document.body.textContent;
-  const lines: string[] = body
-    .split("\n")
-    .map((el) => el.trim())
-    .filter(Boolean);
-  if (lines.length === 0) return;
-  console.log(`Sanitizing ${file}`);
-  writeFileSync(
-    file,
-    lines
-      .map(
-        (line) =>
-          `<p>${line
-            .trim()
-            .replaceAll("」", '"')
-            .replaceAll("「", '"')
-            .replaceAll("『", '"')
-            .replaceAll("』", '"')
-            .replaceAll("[", '"')
-            .replaceAll("]", '"')
-            .replaceAll("“", '"')
-            .replaceAll("”", '"')
-            .replaceAll("‘", "'")
-            .replaceAll("’", "'")
-            .replaceAll("【", '"')
-            .replaceAll("】", '"')
-            .replaceAll("（", " (")
-            .replaceAll("）", ") ")
-            .replaceAll("๑", "1")
-            .replaceAll("๒", "2")
-            .replaceAll("๓", "3")
-            .replaceAll("๔", "4")
-            .replaceAll("๕", "5")
-            .replaceAll("๖", "6")
-            .replaceAll("๗", "7")
-            .replaceAll("๘", "8")
-            .replaceAll("๙", "9")
-            .replaceAll("๐", "0")
-            .replaceAll("１", "1")
-            .replaceAll("２", "2")
-            .replaceAll("３", "3")
-            .replaceAll("４", "4")
-            .replaceAll("５", "5")
-            .replaceAll("６", "6")
-            .replaceAll("７", "7")
-            .replaceAll("８", "8")
-            .replaceAll("９", "9")
-            .replaceAll("０", "0")
-            .replaceAll("…", "...")
-            .replaceAll("—", "—")
-            .replaceAll(/\.\.\.\.+/g, "...")
-            .trim()}</p>`,
-      )
-      .join("\n"),
-  );
-});
+if (!file) {
+  console.log("No file provided. Sanitizing all non-staged changes in books folder...");
+  try {
+    const changedFiles = execSync("git diff --name-only", { encoding: "utf-8" })
+      .split("\n")
+      .filter((f) => f.startsWith("books/") && f.endsWith(".html"));
+    
+    if (changedFiles.length === 0) {
+      console.log("No non-staged changes found in books folder.");
+      process.exit(0);
+    }
+    
+    console.log(`Found ${changedFiles.length} file(s) to sanitize:`);
+    changedFiles.forEach((f) => console.log(`  - ${f}`));
+    
+    changedFiles.forEach(sanitize);
+    console.log(`\nSanitized ${changedFiles.length} file(s) successfully.`);
+  } catch (error) {
+    console.error("Error getting git diff:", error);
+    process.exit(1);
+  }
+} else {
+  sanitize(file);
+}

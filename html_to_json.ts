@@ -23,11 +23,20 @@ await Promise.all(
       new JSDOM(rawHtml).window.document.querySelector("p")?.textContent || "";
     const json = {
       title,
-      content: rawHtml.split("\n").slice(1).join("\n"),
+      content: rawHtml.split("\n").slice(1).join("\n").replaceAll("\r\n", "\n"),
     };
     writeFileSync(`./json/${ch}.json`, JSON.stringify(json, null, 2));
     console.log(`Converted ${file} to JSON`);
-    meta.chapters.find((c) => c.ch === ch)!.name = title;
+    const chapter = meta.chapters.find((c) => c.ch === ch);
+    if (chapter) {
+      chapter.name = title;
+    } else {
+      meta.chapters.push({
+        ch: ch,
+        name: title,
+      });
+    }
+    meta.chapters = meta.chapters.toSorted((a, b) => a.ch - b.ch);
   }),
 );
 writeFileSync("./json/meta.json", JSON.stringify(meta, null, 2));

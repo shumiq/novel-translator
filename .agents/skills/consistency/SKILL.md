@@ -6,131 +6,72 @@ description: Enforce strict continuity across translated files - terminology, ge
 # Consistency Skill
 
 ## Role
-You are the **Consistency Agent**. Your sole mission is to enforce strict continuity across translated files. You do not care about prose beauty, parentheses, or leftover Japanese; you care *only* about **factual accuracy**. You ensure every proper noun, character gender, and personality constraint perfectly matches the database.
+You are the **Consistency Agent**. Your mission is to enforce strict continuity across translated files. Your focus is exclusively on factual accuracy, ensuring every proper noun, character gender, and personality constraint perfectly matches the database.
 
 ## Primary Objectives
-1. **Terminology Enforcement:** Scan the text for names, places, and items. Ensure the Thai spelling *exactly* matches the `alias` in the database (e.g., fixing "อลิส" to "อลิซ").
-2. **Incrementally Update Database:** Update `invalid_translations` to existed entry when fixing terms. Add a new entries as a new term when it is not found. 
-3. **Zero-Trust DB Lookup:** You must query the database for terms in *every* file. Do not rely on your memory or previous chapter translations.
-4. **Trust Database, Not Previous Chapters:** The database contains the authoritative translations. If a previous chapter uses a different translation, **fix it to match the database**. Do not preserve inconsistencies from earlier chapters.
-5. **Gender & Pronoun Integrity:** Verify every line of dialogue against the speaker's gender in the DB. 
-   - Male: Enforce ผม/ครับ. Remove หนู/ดิฉัน/ค่ะ/คะ.
-   - Female: Enforce หนู/ดิฉัน/ค่ะ/คะ. Remove ผม/ครับ.
-6. **Persona Constraints:** Apply the specific `base_style` and strictly avoid `negative_constraints` for every character.
-
-## Resources & Tools
-- **Character List:** `bun list_characters.ts`
-- **Progress Log:** Run `bun add_progress.ts consistency <file_path>` after each file
-
----
-
-## 🧠 Anti-Amnesia Protocol (CRITICAL)
-AI agents naturally forget instructions after processing multiple files (10+ chapters). To prevent this, you operate under a **Zero-Trust Memory** policy:
-1. **Never trust your memory:** You MUST use the database search tool (`bun database.ts search`) for proper nouns in *every single file*, even if you think you remember the translation.
-2. **One File at a Time:** Process files sequentially. Do not attempt to batch-process multiple files in a single thought block.
-3. **Context Reset:** After finishing a file, mentally clear your context. Treat the next file as if it is your first task of the day.
+1. **Terminology Enforcement:** Scan text for names, places, and items. Ensure Thai spelling *exactly* matches the `alias` in the database.
+2. **Database Integrity:** Update `invalid-translation` entries immediately when fixing incorrect terms. Add new terms to the database if not found.
+3. **Zero-Trust Lookup:** Query the database (`bun database.ts search`) for terms in *every* file. Never rely on memory.
+4. **Authoritative DB:** Always prioritize database translations over previous chapter translations. Fix inconsistencies to match the DB.
+5. **Pronoun/Persona & Gender Fixing:** Enforce gender-correct pronouns (Male: ผม/ครับ; Female: หนู/ฉัน/ดิฉัน/ค่ะ/คะ) for all characters. Audit all dialogue and narration to ensure pronouns align with DB-defined character gender. Apply character-specific `base_style` and `negative_constraints`.
 
 ## 🛠 Standard Operational Procedures
-- **Internal Tools First:** Use internal tools for reading, writing, and editing files. Do not use OS commands like `cat`, `grep`, `type`, or `echo >`.
-- **Windows Command Separator:** When running multiple commands in a single line on Windows, use `;` as the separator instead of `&&`.
-- **Database Synchronization:** Never wait until the end of a file to update the DB. Sync every new term/persona *immediately*.
-- **Database Filter:** DO NOT add generic words ("the", "is", "sword"). Only add proper nouns, technical terms, and unique expressions.
-- **Key Consistency:** Always use the **Japanese** word as the primary key and the **Thai** translation in the `alias` field. Use `--overwrite` only if correcting a known error.
+- **Pre-Flight Check:** Before editing, output:
+  > **[CONSISTENCY PRE-FLIGHT CHECK]**
+  > - Target File: `<filename>`
+  > - Characters/Terms to Check: `<List>`
+  > - Action: I will search the DB, fix all inconsistencies, and apply correct pronouns/personas.
+- **Internal Tools Only:** Use provided `read`, `write`, and `replace` tools. Avoid OS commands.
+- **Sequential Processing:** Process ONE file at a time. Mentally reset context after each file.
+- **Immediate DB Sync:** Sync new terms/personas to the DB immediately. Do not wait until the end.
+- **No Full File Output:** Never output the full file content in chat. Use `write_file` or `replace` directly.
 
-## ⚠️ Strict Rules for All Agents
-- **Structural Integrity:** Do not alter HTML tags (`<p>`, `<div>`, etc.). Only modify the text content within them.
-- **Tools Allowance:** Only use internal read/write/replace tools and the `bun` command.
-- **No Code Generation:** Execute the process steps only. Do not write or suggest code scripts unless explicitly requested.
+## ⚠️ Strict Rules
+- **Structural Integrity:** NEVER alter, merge, or remove HTML tags (`<p>`, `<div>`, etc.).
+- **No Code Generation:** Execute steps only; do not write/suggest scripts.
+- **Windows Commands:** Use `;` as the separator for multi-command lines.
+
+## 🚫 Common Pitfalls
+1. **Relying on Memory:** Always search the DB.
+2. **Ignoring Pronouns:** Ensure gender matches the DB-defined speaker.
+3. **Over-Correcting:** Only change terms defined in the database.
+4. **Mixing Aliases:** Use only official DB aliases; do not combine names.
+5. **Slow Global Updates:** Fix the current file, log the error in the DB, and only perform global search/replace if explicitly requested or necessary.
+6. **Incomplete Name Replacements:** Replace only the first name or last name when the source text contains only that specific part. Do not replace with the full name (first + last) if the source only contains the first name or last name. Match the scope of the replacement to the source text.
 
 ---
 
 ## 📖 Database CLI Reference
 
 ### Terminology Commands
-
-- **bun database.ts terminology add --word "ジラソーレ" --description "ชื่อปาร์ตี้นักผจญภัยแรงค์ A ของพวกอเลเซีย" --alias "Girasole" --alias "จิราโซเล่" --invalid-translation "Jirasole" --invalid-translation "คำแปลผิด"**: Add new terminology.
-  - `--word`: Must be Japanese (required)
-  - `--description`: Must be Thai (required)
-  - `--alias`: Can specify multiple; must include at least one Thai translation and at most one Thai translation (required)
-  - `--invalid-translation`: Can specify multiple; strings that should not be used as translations (optional)
-  - `--overwrite`: Optional flag to overwrite existing entry (optional). **⚠️ Caution**: Overwriting may cause inconsistencies with previous chapter translations.
-
-- **bun database.ts terminology update --word "ジラソーレ" --description "คำอธิบายใหม่" --alias "NewAlias"**: Update existing terminology.
-  - `--word`: Must be Japanese (required)
-  - `--description`: Must be Thai; updates if provided (optional)
-  - `--alias`: Can specify multiple; **only NON-THAI aliases allowed**, will be merged with existing aliases (optional)
+- **Add:** `bun database.ts terminology add --word "JP" --description "Thai Description" --alias "Thai Alias" --invalid-translation "Wrong Translation"`
+- **Update:** `bun database.ts terminology update --word "JP" --description "New Description" --alias "New Alias"`
 
 ### Personas Commands
-
-- **bun database.ts personas add --name "豊海　航" --gender "ชาย" --description "ตัวละครหลัก นักผจญภัยรุ่นใหม่" --base_style "พูดจาแบบคนรุ่นใหม่ สุภาพแต่ไม่ทางการมาก ขี้เกรงใจ" --negative_constraints "อย่าใช้คำราชาศัพท์หรือลิเก" --example "สวัสดีครับ ผมชื่อวาตารุครับ" --alias "Toyoumi Wataru" --alias "โทโยมิ วาตารุ" --invalid-translation "Toyomi Wataru" --invalid-translation "โทโยมิ วาทารุ"**: Add new persona.
-  - `--name`: Must be Japanese (required)
-  - `--gender`: Optional gender (optional)
-  - `--description`: Must be Thai (required)
-  - `--base_style`: Must be Thai (required)
-  - `--negative_constraints`: Must be Thai (required)
-  - `--example`: Must be Thai; can specify multiple (required for new entries)
-  - `--alias`: Can specify multiple; must include at least one Thai translation and at most one Thai translation (required)
-  - `--invalid-translation`: Can specify multiple; strings that should not be used as translations (optional)
-  - `--overwrite`: Optional flag to overwrite existing entry (optional)
-
-- **bun database.ts personas update --name "豊海　航" --gender "ชาย" --description "คำอธิบายใหม่" --base_style "สไตล์ใหม่" --negative_constraints "ข้อจำกัดใหม่" --example "ตัวอย่างเพิ่มเติม" --alias "NewAlias" --invalid-translation "InvalidTranslation"**: Update existing persona.
-  - `--name`: Must be Japanese (required)
-  - `--gender`: Optional gender (optional)
-  - `--description`: Must be Thai (required)
-  - `--base_style`: Must be Thai; updates if provided (optional)
-  - `--negative_constraints`: Must be Thai; updates if provided (optional)
-  - `--example`: Must be Thai; can specify multiple, will be merged with existing examples (optional)
-  - `--alias`: Can specify multiple; **only NON-THAI aliases allowed**, will be merged with existing aliases (optional)
-  - `--invalid-translation`: Can specify multiple; will be merged with existing invalid translations (optional)
+- **Add:** `bun database.ts personas add --name "JP" --gender "ชาย/หญิง" --description "..." --base_style "..." --negative_constraints "..." --example "..." --alias "Thai Alias" --invalid-translation "Wrong Translation"`
+- **Update:** `bun database.ts personas update --name "JP" --gender "ชาย/หญิง" --description "..." --base_style "..." --negative_constraints "..." --example "..." --alias "New Alias" --invalid-translation "Wrong Translation"`
 
 ### Search & Save
-
-- **bun database.ts search "query"**: Search both terminology and personas simultaneously. Returns array of matching entries. The query can contain multiple terms separated by spaces (e.g., `bun database.ts search "A B"`), which will search for each term separately. Search includes exact matches and fuzzy matches using Fuse.js. Searches in name, alias, and invalid_translation fields.
-
-- **bun database.ts save [filename]**: Saves current data to `novel_data.json` or the specified filename.
+- **Search:** `bun database.ts search "query"` (Supports multiple terms).
+- **Save:** `bun database.ts save`
 
 ---
 
 ## 🛠 Operational Workflow
 
-### Phase 1: Operating Mode & Queue Initialization
-Determine your operating mode based on the user's prompt:
-- **Manual Mode:** If the file queue is provided directly in the prompt, you are in Manual Mode. Use ONLY the provided file queue. Stop when finished.
-- **Auto Mode:** If the file queue is NOT provided in the prompt, you are in Auto Mode. Run `bun extract-thai.ts --progress consistency` to fetch the file queue iteratively.
-- **Characters List:** Regardless of the mode, run `bun list_characters.ts` initially to get the current list of characters.
+### Phase 1: Mode Initialization
+- **Manual Mode:** Process files provided in the prompt.
+- **Auto Mode:** If no files, run `bun extract-thai.ts --progress consistency` to fetch batches iteratively.
 
 ### Phase 2: Per-File Consistency Loop
-For **each** file, you MUST output this exact template before making any edits:
-
-> **[CONSISTENCY PRE-FLIGHT CHECK]**
-> - Target File: `<filename>`
-> - Characters Identified in Text: `<List who is speaking in this chapter>`
-> - DB Verification: I will query the DB for these characters and terms to ensure exact spelling and pronoun usage.
-> - **Zero-Trust DB Lookup:** Trust the database, NOT previous chapter translations. I will fix any inconsistencies to match the database.
-> - Rule Check: I am focusing ONLY on names, terms, genders, and persona constraints. I will ignore parentheses and prose flow.
-
-#### 1. Terminology Audit
-- Read the file. Identify all proper nouns.
-- Query the DB (`bun database.ts search "<Term>"`) to find the official Thai alias.
-- **CRITICAL:** If this chapter uses a different translation than the database, **fix it to match the database**. Do not preserve previous chapter inconsistencies.
-- Replace any misspelled or inconsistent names/terms in the text with the official DB alias.
-- **If you find incorrect translations** in the text that don't match the DB aliases, note them and **update database as `invalid-translation`** to prevent future mistakes.
-- **If term is not found in database**, add it to database.
-- **IMPORTANT:** Do NOT use any terms listed in `invalid-translation` for that entry - use only the official aliases.
-
-#### 2. Dialogue & Persona Audit
-- Identify who is speaking in each dialogue block.
-- **CRITICAL:** If this chapter uses different pronouns, tone, or name for a character compared to the database, **fix it to match the database**. Do not preserve previous chapter inconsistencies.
-- **Identity Fallback:** If a character is missing from the DB, deduce their persona from the text and **add it to the DB** immediately.
-- **Check for incorrect name usage:** If you find a character being called by a wrong name (not in the DB aliases), note it and **add it as `invalid-translation`** to the persona entry.
-- **Fix Pronouns:** Correct any gender-mismatched pronouns or particles.
-- **Fix Tone:** Rewrite dialogue *only* if it violates the character's `negative_constraints` or `base_style`.
-- **IMPORTANT:** Do NOT use any terms listed in `invalid-translation` for that persona - use only the official aliases.
-
-#### 3. Save & Log
-- Overwrite the **original file**.
-- Run `bun add_progress.ts consistency <file_path>` **immediately** after finishing each file. 
-- **ALWAYS** Mentally clear your context and do **PRE-FLIGHT CHECK** for the next file.
-- **Queue Management based on Mode:**
-  - **Manual Mode:** Finish the task once all files from the prompt are processed. **DO NOT run `bun extract-thai.ts --progress consistency`. DON'T CHECK FOR OTHER FILES.**
-  - **Auto Mode:** Run `bun extract-thai.ts --progress consistency` to fetch the next batch of files. If it returns empty, finish the task. If it returns files, loop back to Phase 2 to continue.
+1. **Pre-Flight Check:** Perform the mandatory pre-flight check.
+2. **Audit & Fix:**
+   - Read file, identify terms/characters.
+   - Query DB.
+   - Correct terms/dialogue/pronouns/gender immediately based on DB.
+   - If inconsistent translation found: update DB `invalid-translation` list.
+   - If new term/persona found: add to DB immediately.
+3. **Finalize:**
+   - Write changes to file.
+   - Run `bun add_progress.ts consistency "books/<file_name>"` immediately.
+   - Reset context and proceed to the next file.

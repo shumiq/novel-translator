@@ -76,8 +76,13 @@ const parseArgs = (args: string[]) => {
           process.exit(1);
         }
         const value = args[i + 1];
-        if (key === "alias" || key === "example" || key === "invalid-translation") {
-          const finalKey = key === "invalid-translation" ? "invalid_translation" : key;
+        if (
+          key === "alias" ||
+          key === "example" ||
+          key === "invalid-translation"
+        ) {
+          const finalKey =
+            key === "invalid-translation" ? "invalid_translation" : key;
           if (!result[finalKey]) result[finalKey] = [];
           result[finalKey].push(value);
         } else {
@@ -169,7 +174,7 @@ if (command === "terminology") {
         }
       }
     }
-    
+
     data[body.word] = {
       ...data[body.word],
       description: body.description,
@@ -177,7 +182,10 @@ if (command === "terminology") {
         new Set([...(data[body.word]?.alias || []), ...body.alias]),
       ),
       invalid_translation: Array.from(
-        new Set([...(data[body.word]?.invalid_translation || []), ...(body.invalid_translation || [])]),
+        new Set([
+          ...(data[body.word]?.invalid_translation || []),
+          ...(body.invalid_translation || []),
+        ]),
       ),
     };
     fuse = new Fuse(
@@ -232,8 +240,15 @@ if (command === "terminology") {
     // Update fields
     const updated: Terminology = {
       description: body.description || existing.description,
-      alias: Array.from(new Set([...(existing.alias || []), ...(body.alias || [])])),
-      invalid_translation: Array.from(new Set([...(existing.invalid_translation || []), ...(body.invalid_translation || [])])),
+      alias: Array.from(
+        new Set([...(existing.alias || []), ...(body.alias || [])]),
+      ),
+      invalid_translation: Array.from(
+        new Set([
+          ...(existing.invalid_translation || []),
+          ...(body.invalid_translation || []),
+        ]),
+      ),
     };
     data[body.word] = updated;
     fuse = new Fuse(
@@ -342,7 +357,7 @@ if (command === "terminology") {
         }
       }
     }
-    
+
     data[body.name] = {
       ...data[body.name],
       gender: body.gender,
@@ -354,7 +369,10 @@ if (command === "terminology") {
         new Set([...(data[body.name]?.alias || []), ...body.alias]),
       ),
       invalid_translation: Array.from(
-        new Set([...(data[body.name]?.invalid_translation || []), ...(body.invalid_translation || [])]),
+        new Set([
+          ...(data[body.name]?.invalid_translation || []),
+          ...(body.invalid_translation || []),
+        ]),
       ),
     };
     fuse = new Fuse(
@@ -430,7 +448,10 @@ if (command === "terminology") {
         new Set([...(existing.alias || []), ...(body.alias || [])]),
       ),
       invalid_translation: Array.from(
-        new Set([...(existing.invalid_translation || []), ...(body.invalid_translation || [])]),
+        new Set([
+          ...(existing.invalid_translation || []),
+          ...(body.invalid_translation || []),
+        ]),
       ),
     };
     data[body.name] = updated;
@@ -463,20 +484,59 @@ if (command === "terminology") {
           data.alias.includes(word) ||
           (data.invalid_translation || []).includes(word),
       )
-      .map(([name, data]) => ({ name, ...data }));
+      .map(([name, data]) => ({ name, ...data, score: 0 }));
 
     // For fuzzy search, search each query and combine results
-    const fuzzyResults =
-      exactMatches.length === 0
-        ? fuse
-            .search(word)
-            .map((r) => ({ item: r.item, score: r.score ?? 1 }))
-            .sort((a, b) => a.score - b.score)
-        : [];
-
+    const fuzzyResults = fuse
+      .search(word)
+      .map((r) => ({ ...r.item, score: r.score ?? 1 }))
+      .filter((r) => !exactMatches.some((e) => e.name === r.name))
+      .sort((a, b) => a.score - b.score)
+      .slice(0, 10);
     const result = [...exactMatches, ...fuzzyResults];
 
-    console.log(JSON.stringify({ query: word, result }, null, 2));
+    console.log(`=== SEARCH_RESULT_START query="${word}" ===`);
+    if (result.length === 0) {
+      console.log("No results found.");
+    } else {
+      result.forEach((entry, index) => {
+        const isPersona = "base_style" in entry;
+        console.log(
+          `\n[Result ${index + 1}] Type: ${isPersona ? "Persona" : "Terminology"}`,
+        );
+        console.log(`  Name (Japanese): ${entry.name}`);
+        if (entry.gender) console.log(`  Gender: ${entry.gender}`);
+        console.log(`  Description (Thai): ${entry.description}`);
+        if (isPersona) {
+          console.log(`  Base Style (Thai): ${entry.base_style}`);
+          console.log(
+            `  Negative Constraints (Thai): ${entry.negative_constraints}`,
+          );
+        }
+        if (entry.alias?.length > 0) {
+          console.log(
+            `  Translation: ${entry.alias.filter(isThai).join(", ")}`,
+          );
+        }
+        if (entry.invalid_translation?.length > 0) {
+          console.log(
+            `  Invalid Translations: ${entry.invalid_translation.join(", ")}`,
+          );
+        }
+        if (isPersona && entry.example?.length > 0) {
+          console.log(`  Examples:`);
+          entry.example.forEach((ex: string) =>
+            console.log(
+              `    - ${typeof ex === "string" ? ex : JSON.stringify(ex)}`,
+            ),
+          );
+        }
+        if ("score" in entry) {
+          console.log(`  Match Score: ${(entry as any).score.toFixed(4)}`);
+        }
+      });
+    }
+    console.log(`=== SEARCH_RESULT_END ===`);
   }
   queries.forEach(search);
 } else {

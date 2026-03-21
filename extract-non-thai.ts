@@ -20,14 +20,13 @@ const filterOut = existsSync(filterOutFile)
   ? readFileSync(filterOutFile, "utf-8").replaceAll("\\", "/")
   : "";
 
-const limit = 5;
+const limit = 1;
 let count = 0;
 
 for (const file of files.sort((a, b) =>
   a.split("\\").length > 2
     ? a.localeCompare(b)
-    : Number(a.split("\\").at(-1)?.split(".")[0]) -
-      Number(b.split("\\").at(-1)?.split(".")[0]),
+    : Number(a.replaceAll(/[^0-9]/g, "")) - Number(b.replaceAll(/[^0-9]/g, "")),
 )) {
   if (!file.endsWith("html") || filterOut.includes(file.replaceAll("\\", "/")))
     continue;

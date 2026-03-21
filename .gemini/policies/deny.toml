@@ -1,5 +1,5 @@
 [[rule]]
 toolName = "run_shell_command"
-commandPrefix = ["powershell", "powershell.exe", "echo", "cat", "grep", "type", "sed", "grep_search"]
+commandPrefix = ["powershell", "powershell.exe", "echo", "cat", "type", "sed"]
 decision = "deny"
 priority = 1
