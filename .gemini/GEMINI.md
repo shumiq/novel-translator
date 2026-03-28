@@ -20,6 +20,6 @@ This project uses a specialized multi-agent workflow for high-quality translatio
 - **Translator (`translator`):** Perform 1:1 translation. Extract terms on-the-fly.
 - **Consistency (`consistency`):** Enforce strict continuity. Fix terminology, gender, and persona constraints.
 - **Japanese Purifier (`japanese-purifier`):** Eliminate leftover Japanese characters.
-- **Polish (`polish`):** Polish natural prose flow.
+- **Humanize (`humanize`):** Polish natural prose flow.
 
 *Refer to the individual `SKILL.md` file for each agent for detailed operational workflows.*

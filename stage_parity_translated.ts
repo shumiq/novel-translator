@@ -55,12 +55,12 @@ function resetInvalidTranslatedFiles() {
           );
         }
         if (
-          existsSync("polish_progress.txt") &&
-          execSync("git diff polish_progress.txt", { encoding: "utf-8" }).trim()
+          existsSync("humanize_progress.txt") &&
+          execSync("git diff humanize_progress.txt", { encoding: "utf-8" }).trim()
         ) {
-          const content = readFileSync("polish_progress.txt", "utf-8");
+          const content = readFileSync("humanize_progress.txt", "utf-8");
           writeFileSync(
-            "polish_progress.txt",
+            "humanize_progress.txt",
             content.replaceAll(filename.replaceAll("\\", "/"), ""),
           );
         }
@@ -115,10 +115,10 @@ if (existsSync("consistency_progress.txt")) {
       .join("\n"),
   );
 }
-if (existsSync("polish_progress.txt")) {
-  const content = readFileSync("polish_progress.txt", "utf-8");
+if (existsSync("humanize_progress.txt")) {
+  const content = readFileSync("humanize_progress.txt", "utf-8");
   writeFileSync(
-    "polish_progress.txt",
+    "humanize_progress.txt",
     Array.from(
       new Set(
         content

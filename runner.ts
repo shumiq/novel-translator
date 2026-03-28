@@ -51,7 +51,7 @@ function runWorkflow({
           `gemini --yolo --model ${model ?? "gemini-3.1-flash-lite-preview"} --prompt "${prompt}"`,
           {
             stdio: "inherit",
-            timeout: 1000 * 60 * 10,
+            timeout: 1000 * 60 * 20,
             killSignal: "SIGKILL",
           },
         );
@@ -60,14 +60,14 @@ function runWorkflow({
           `opencode run "${prompt}" --model ${model ?? "google/gemini-3.1-flash-lite-preview"}`,
           {
             stdio: "inherit",
-            timeout: 1000 * 60 * 10,
+            timeout: 1000 * 60 * 20,
             killSignal: "SIGKILL",
           },
         );
       if (agent === "kilo")
         execSync(`kilo run "${prompt}" --model kilo/openrouter/hunter-alpha`, {
           stdio: "inherit",
-          timeout: 1000 * 60 * 10,
+          timeout: 1000 * 60 * 20,
           killSignal: "SIGKILL",
         });
     } finally {
@@ -83,7 +83,7 @@ function runWorkflow({
       execSync("git add consistency_progress.txt", {
         stdio: "inherit",
       });
-      execSync("git add polish_progress.txt", {
+      execSync("git add humanize_progress.txt", {
         stdio: "inherit",
       });
       // execSync("git commit --amend --no-edit");
@@ -107,8 +107,8 @@ for (let i = 0; i < 10; i++) {
     queueCmd: "bun extract-thai.ts --progress consistency",
   });
   runWorkflow({
-    skillName: "polish",
-    queueCmd: "bun extract-thai.ts --progress polish",
+    skillName: "humanize",
+    queueCmd: "bun extract-thai.ts --progress humanize",
   });
 }
 
