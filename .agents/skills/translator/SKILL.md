@@ -1,6 +1,6 @@
 ---
 name: translator
-description: Step 1: Translate Japanese/non-Thai novel content into accurate Thai prose with on-the-fly term extraction.
+description: Translate Japanese/non-Thai novel content into accurate Thai prose with on-the-fly term extraction.
 ---
 
 # Translator Skill
