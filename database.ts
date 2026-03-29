@@ -115,8 +115,8 @@ if (command === "terminology") {
       );
       process.exit(1);
     }
-    if (!isJapanese(body.word)) {
-      console.error("Invalid arguments: word must be Japanese");
+    if (!isJapanese(body.word) && !isThai(body.word)) {
+      console.error("Invalid arguments: word must be Japanese or Thai");
       process.exit(1);
     }
     if (!isThai(body.description)) {
@@ -205,8 +205,8 @@ if (command === "terminology") {
       console.error("Invalid arguments: --word (string) is required");
       process.exit(1);
     }
-    if (!isJapanese(body.word)) {
-      console.error("Invalid arguments: word must be Japanese");
+    if (!isJapanese(body.word) && !isThai(body.word)) {
+      console.error("Invalid arguments: word must be Japanese or Thai");
       process.exit(1);
     }
     const existing = data[body.word] as Terminology;
@@ -286,8 +286,8 @@ if (command === "terminology") {
       );
       process.exit(1);
     }
-    if (!isJapanese(body.name)) {
-      console.error("Invalid arguments: name must be Japanese");
+    if (!isJapanese(body.name) && !isThai(body.name)) {
+      console.error("Invalid arguments: name must be Japanese or Thai");
       process.exit(1);
     }
     if (!isThai(body.description)) {
@@ -389,8 +389,8 @@ if (command === "terminology") {
       console.error("Invalid arguments: --name (string) is required");
       process.exit(1);
     }
-    if (!isJapanese(body.name)) {
-      console.error("Invalid arguments: name must be Japanese");
+    if (!isJapanese(body.name) && !isThai(body.name)) {
+      console.error("Invalid arguments: name must be Japanese or Thai");
       process.exit(1);
     }
     const existing = data[body.name] as Persona;
@@ -504,7 +504,7 @@ if (command === "terminology") {
         console.log(
           `\n[Result ${index + 1}] Type: ${isPersona ? "Persona" : "Terminology"}`,
         );
-        console.log(`  Name (Japanese): ${entry.name}`);
+        console.log(`  Name: ${entry.name}`);
         if (entry.gender) console.log(`  Gender: ${entry.gender}`);
         console.log(`  Description (Thai): ${entry.description}`);
         if (isPersona) {
