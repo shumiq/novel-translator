@@ -57,7 +57,7 @@ function runWorkflow({
         );
       if (agent === "opencode")
         execSync(
-          `opencode run "${prompt}" --model ${model ?? "google/gemini-3.1-flash-lite-preview"}`,
+          `opencode run "${prompt}" --model ${model ?? "google/gemini-3.1-flash-lite-preview"} --agent translate --thinking true -- --variant med`,
           {
             stdio: "inherit",
             timeout: 1000 * 60 * 20,
