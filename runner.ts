@@ -1,16 +1,12 @@
 import { execSync } from "child_process";
 import { existsSync } from "fs";
-
-const DEFAULT_AGENT = process.env.DEFAULT_AGENT as Pick<
-  Parameters<typeof runWorkflow>[0],
-  "agent"
->["agent"];
+import { config } from "./config";
 
 function runWorkflow({
   skillName,
   queueCmd,
   model,
-  agent = DEFAULT_AGENT,
+  agent = (config.agent || "gemini") as "gemini" | "opencode" | "kilo",
 }: {
   skillName: string;
   queueCmd?: string;
@@ -48,7 +44,7 @@ function runWorkflow({
     try {
       if (agent === "gemini")
         execSync(
-          `gemini --yolo --model ${model ?? "gemini-3.1-flash-lite-preview"} --prompt "${prompt}"`,
+          `gemini --yolo --model ${model ?? config.model.gemini} --prompt "${prompt}"`,
           {
             stdio: "inherit",
             timeout: 1000 * 60 * 20,
@@ -57,7 +53,7 @@ function runWorkflow({
         );
       if (agent === "opencode")
         execSync(
-          `opencode run "${prompt}" --model ${model ?? "google/gemini-3.1-flash-lite-preview"} --agent translate --thinking true -- --variant med`,
+          `opencode run "${prompt}" --model ${model ?? config.model.opencode} --agent translate --thinking true -- --variant med`,
           {
             stdio: "inherit",
             timeout: 1000 * 60 * 20,
@@ -65,7 +61,7 @@ function runWorkflow({
           },
         );
       if (agent === "kilo")
-        execSync(`kilo run "${prompt}" --model kilo/openrouter/hunter-alpha`, {
+        execSync(`kilo run "${prompt}" --model ${model ?? config.model.kilo}`, {
           stdio: "inherit",
           timeout: 1000 * 60 * 20,
           killSignal: "SIGKILL",

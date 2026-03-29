@@ -1,10 +1,11 @@
 import { cpSync, existsSync, mkdirSync, readdirSync } from "fs";
 import { join } from "path";
+import { config } from "./config";
 
-const sourceDir = process.env.TARGET_FOLDER ?? "";
+const sourceDir = config.path;
 const destination = "./json";
 
-if (!process.env.TARGET_FOLDER || !existsSync(sourceDir)) process.exit(1);
+if (!sourceDir || !existsSync(sourceDir)) process.exit(1);
 
 console.log(`Copy JSON from ${sourceDir}`);
 
