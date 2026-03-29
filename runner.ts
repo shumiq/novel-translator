@@ -76,12 +76,14 @@ function runWorkflow({
       execSync("git add novel_data.json", {
         stdio: "inherit",
       });
-      execSync("git add consistency_progress.txt", {
-        stdio: "inherit",
-      });
-      execSync("git add humanize_progress.txt", {
-        stdio: "inherit",
-      });
+      if (existsSync("consistency_progress.txt"))
+        execSync("git add consistency_progress.txt", {
+          stdio: "inherit",
+        });
+      if (existsSync("humanize_progress.txt"))
+        execSync("git add humanize_progress.txt", {
+          stdio: "inherit",
+        });
       // execSync("git commit --amend --no-edit");
     }
   } catch (e) {
@@ -94,10 +96,6 @@ for (let i = 0; i < 10; i++) {
     skillName: "translator",
     queueCmd: "bun extract-non-thai.ts",
   });
-  if (execSync("bun extract-leftover-japanese.ts").toString().trim())
-    runWorkflow({
-      skillName: "japanese-purifier",
-    });
   runWorkflow({
     skillName: "consistency",
     queueCmd: "bun extract-thai.ts --progress consistency",
