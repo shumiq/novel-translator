@@ -115,8 +115,8 @@ if (command === "terminology") {
       );
       process.exit(1);
     }
-    if (!isJapanese(body.word) && !isThai(body.word)) {
-      console.error("Invalid arguments: word must be Japanese or Thai");
+    if (!isJapanese(body.word)) {
+      console.error("Invalid arguments: word must be Japanese");
       process.exit(1);
     }
     if (!isThai(body.description)) {
@@ -205,8 +205,8 @@ if (command === "terminology") {
       console.error("Invalid arguments: --word (string) is required");
       process.exit(1);
     }
-    if (!isJapanese(body.word) && !isThai(body.word)) {
-      console.error("Invalid arguments: word must be Japanese or Thai");
+    if (!isJapanese(body.word)) {
+      console.error("Invalid arguments: word must be Japanese");
       process.exit(1);
     }
     const existing = data[body.word] as Terminology;
@@ -286,8 +286,12 @@ if (command === "terminology") {
       );
       process.exit(1);
     }
-    if (!isJapanese(body.name) && !isThai(body.name)) {
-      console.error("Invalid arguments: name must be Japanese or Thai");
+    if (!isJapanese(body.name)) {
+      console.error("Invalid arguments: name must be Japanese");
+      process.exit(1);
+    }
+    if (["ชาย", "หญิง", "ไม่ระบุ"].indexOf(body.gender) === -1) {
+      console.error("Invalid arguments: gender must be ชาย/หญิง/ไม่ระบุ");
       process.exit(1);
     }
     if (!isThai(body.description)) {
@@ -389,8 +393,8 @@ if (command === "terminology") {
       console.error("Invalid arguments: --name (string) is required");
       process.exit(1);
     }
-    if (!isJapanese(body.name) && !isThai(body.name)) {
-      console.error("Invalid arguments: name must be Japanese or Thai");
+    if (!isJapanese(body.name)) {
+      console.error("Invalid arguments: name must be Japanese");
       process.exit(1);
     }
     const existing = data[body.name] as Persona;
@@ -404,6 +408,15 @@ if (command === "terminology") {
         console.error("Invalid arguments: description must be Thai");
         process.exit(1);
       }
+    }
+    // Validate gender if provided
+    if (
+      body.gender &&
+      typeof body.gender !== "string" &&
+      ["ชาย", "หญิง", "ไม่ระบุ"].indexOf(body.gender) === -1
+    ) {
+      console.error("Invalid arguments: gender must be a ชาย/หญิง/ไม่ระบุ");
+      process.exit(1);
     }
     // Validate base_style if provided
     if (body.base_style && !isThai(body.base_style)) {
@@ -470,7 +483,7 @@ if (command === "terminology") {
   saveData();
   console.log("Saved to", param || "novel_data.json");
 } else if (command === "search") {
-  const query = subcommand ?? "";
+  const query = args.slice(1).join(" ") ?? "";
   const queries = query
     .trim()
     .split(/\s+/)
