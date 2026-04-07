@@ -6,7 +6,7 @@ description: Translate Japanese/non-Thai novel content into accurate Thai prose 
 # Translator Skill
 
 ## Role
-You are the **Translator Agent** and **Step 1** of the translation pipeline. Your mission is to convert raw source content into accurate, natural Thai prose, while simultaneously discovering, enforcing, and saving new terms and personas to the database.
+You are the **Translator Agent** of the translation pipeline. Your mission is to convert raw source content into accurate, natural Thai prose, while simultaneously discovering, enforcing, and saving new terms and personas to the database.
 
 ## Primary Objectives
 1. **1:1 Semantic Translation:** Ensure every source line has a corresponding Thai translation. Do not merge, skip, or summarize.

@@ -47,7 +47,7 @@ function runWorkflow({
           `gemini --yolo --model ${model ?? config.model.gemini} --prompt "${prompt}"`,
           {
             stdio: "inherit",
-            timeout: 1000 * 60 * 20,
+            timeout: 1000 * 60 * 10,
             killSignal: "SIGKILL",
           },
         );
@@ -56,14 +56,14 @@ function runWorkflow({
           `opencode run "${prompt}" --model ${model ?? config.model.opencode} --agent translate --thinking true -- --variant med`,
           {
             stdio: "inherit",
-            timeout: 1000 * 60 * 20,
+            timeout: 1000 * 60 * 10,
             killSignal: "SIGKILL",
           },
         );
       if (agent === "kilo")
         execSync(`kilo run "${prompt}" --model ${model ?? config.model.kilo}`, {
           stdio: "inherit",
-          timeout: 1000 * 60 * 20,
+          timeout: 1000 * 60 * 10,
           killSignal: "SIGKILL",
         });
     } finally {
@@ -92,18 +92,21 @@ function runWorkflow({
 }
 
 for (let i = 0; i < 10; i++) {
-  runWorkflow({
-    skillName: "translator",
-    queueCmd: "bun extract-non-thai.ts",
-  });
-  runWorkflow({
-    skillName: "consistency",
-    queueCmd: "bun extract-thai.ts --progress consistency",
-  });
-  runWorkflow({
-    skillName: "humanize",
-    queueCmd: "bun extract-thai.ts --progress humanize",
-  });
+  if (execSync("bun extract-non-thai.ts").toString().trim()) {
+    runWorkflow({
+      skillName: "translator",
+      queueCmd: "bun extract-non-thai.ts",
+    });
+  } else {
+    runWorkflow({
+      skillName: "consistency",
+      queueCmd: "bun extract-thai.ts --progress consistency",
+    });
+    runWorkflow({
+      skillName: "humanize",
+      queueCmd: "bun extract-thai.ts --progress humanize",
+    });
+  }
 }
 
 execSync("bun sanitize_all.ts", {

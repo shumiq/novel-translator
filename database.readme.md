@@ -1,50 +1,142 @@
-# Database CLI Documentation
+# Translation Database CLI (`database.ts`)
 
-## Usage Note
+This CLI tool manages a JSON database (`novel_data.json`) used for Japanese-to-Thai novel translation. It stores and retrieves **Terminology** (general vocabulary/lore) and **Personas** (character profiles, speaking styles, and constraints).
 
-Keys are Japanese words. Use the `search` command to check for existing entries and the `add` command to add new entries. Data is stored in `novel_data.json`.
+## Core Rules & Constraints (CRITICAL)
 
-## CLI Details
+To use this tool correctly, you **MUST** adhere to the following language and formatting rules:
 
-### Terminology Commands
+1. **Japanese Keys:** `--word` (for terminology) and `--name` (for personas) **MUST** contain Japanese characters.
+2. **Thai Content:** `--description`, `--base_style`, `--negative_constraints`, and `--example` **MUST** contain Thai characters.
+3. **The "One Thai Alias" Rule:** 
+   - When using `add`, you **MUST** provide exactly **ONE** Thai translation via the `--alias` flag.
+   - When using `update`, you **CANNOT** add Thai aliases. You may only add non-Thai aliases (e.g., English romaji) during an update.
+4. **Gender Strictness:** `--gender` **MUST** be exactly one of: `ชาย` (Male), `หญิง` (Female), or `ไม่ระบุ` (Unspecified).
+5. **Repeatable Flags:** `--alias`, `--invalid-translation`, and `--example` can be used multiple times in a single command to add multiple items.
+6. **Overwriting:** If an entry or its primary Thai alias already exists, the CLI will block the `add` command to prevent translation inconsistencies. You must explicitly pass the `--overwrite` flag to bypass this.
 
-- **bun database.ts terminology add --word "ジラソーレ" --description "ชื่อปาร์ตี้นักผจญภัยแรงค์ A ของพวกอเลเซีย" --alias "Girasole" --alias "จิราโซเล่" --invalid-translation "Jirasole" --invalid-translation "คำแปลผิด"**: Add new terminology.
-  - `--word`: Must be Japanese (required)
-  - `--description`: Must be Thai (required)
-  - `--alias`: Can specify multiple; must include at least one Thai translation and at most one Thai translation (required)
-  - `--invalid-translation`: Can specify multiple; strings that should not be used as translations (optional)
-  - `--overwrite`: Optional flag to overwrite existing entry (optional). **⚠️ Caution**: Overwriting may cause inconsistencies with previous chapter translations. A confirmation prompt (Y/N) will be displayed.
+---
 
-- **bun database.ts terminology update --word "ジラソーレ" --description "คำอธิบายใหม่" --alias "NewAlias"**: Update existing terminology.
-  - `--word`: Must be Japanese (required)
-  - `--description`: Must be Thai; updates if provided (optional)
-  - `--alias`: Can specify multiple; **only NON-THAI aliases allowed**, will be merged with existing aliases (optional)
+## Commands
 
-### Personas Commands
+### 1. Terminology Management
 
-- **bun database.ts personas add --name "豊海　航" --gender "ชาย" --description "ตัวละครหลัก นักผจญภัยรุ่นใหม่" --base_style "พูดจาแบบคนรุ่นใหม่ สุภาพแต่ไม่ทางการมาก ขี้เกรงใจ" --negative_constraints "อย่าใช้คำราชาศัพท์หรือลิเก" --example "สวัสดีครับ ผมชื่อวาตารุครับ" --alias "Toyoumi Wataru" --alias "โทโยมิ วาตารุ" --invalid-translation "Toyomi Wataru" --invalid-translation "โทโยมิ วาตารุ"**: Add new persona.
-  - `--name`: Must be Japanese (required)
-  - `--gender`: Must be ชาย/หญิง/ไม่ระบุ (required)
-  - `--description`: Must be Thai (required)
-  - `--base_style`: Must be Thai (required)
-  - `--negative_constraints`: Must be Thai (required)
-  - `--example`: Must be Thai; can specify multiple (required for new entries)
-  - `--alias`: Can specify multiple; must include at least one Thai translation and at most one Thai translation (required)
-  - `--invalid-translation`: Can specify multiple; strings that should not be used as translations (optional)
-  - `--overwrite`: Optional flag to overwrite existing entry (optional). **⚠️ Caution**: Overwriting may cause inconsistencies with previous chapter translations. A confirmation prompt (Y/N) will be displayed.
+Manage general vocabulary, places, magic spells, or items.
 
-- **bun database.ts personas update --name "豊海　航" --gender "ชาย" --description "คำอธิบายใหม่" --base_style "สไตล์ใหม่" --negative_constraints "ข้อจำกัดใหม่" --example "ตัวอย่างเพิ่มเติม" --alias "NewAlias" --invalid-translation "InvalidTranslation"**: Update existing persona.
-  - `--name`: Must be Japanese (required)
-  - `--gender`: Must be ชาย/หญิง/ไม่ระบุ; updates if provided (optional)
-  - `--description`: Must be Thai (required)
-  - `--base_style`: Must be Thai; updates if provided (optional)
-  - `--negative_constraints`: Must be Thai; updates if provided (optional)
-  - `--example`: Must be Thai; can specify multiple, will be merged with existing examples (optional)
-  - `--alias`: Can specify multiple; **only NON-THAI aliases allowed**, will be merged with existing aliases (optional)
-  - `--invalid-translation`: Can specify multiple; will be merged with existing invalid translations (optional)
+#### `terminology add`
+Creates a new terminology entry.
+* **Required:**
+  * `--word <text>`: The Japanese term.
+  * `--description <text>`: Thai explanation of the term.
+  * `--alias <text>`: The official Thai translation (exactly one).
+* **Optional:**
+  * `--invalid-translation <text>`: Known bad translations to avoid (repeatable).
+  * `--overwrite`: Force overwrite if the word already exists.
 
-### Search & Save
+**Example:**
+```bash
+bun database.ts terminology add --word "魔法" --description "พลังงานลึกลับที่ใช้ร่ายเวท" --alias "เวทมนตร์" --invalid-translation "magic" --invalid-translation "มายิก"
+```
 
-- **bun database.ts search "query"**: Search both terminology and personas simultaneously. Returns array of matching entries. The query can contain multiple terms separated by spaces (e.g., `bun database.ts search "A B"`), which will search for each term separately (each term is searched individually). Search includes exact matches and fuzzy matches using Fuse.js. Searches in name, alias, and invalid_translation fields.
+#### `terminology update`
+Updates an existing terminology entry.
+* **Required:**
+  * `--word <text>`: The Japanese term (must already exist).
+* **Optional:**
+  * `--description <text>`: New Thai description.
+  * `--alias <text>`: Additional **Non-Thai** aliases (repeatable).
+  * `--invalid-translation <text>`: Additional invalid translations (repeatable).
 
-- **bun database.ts save [filename]**: Saves current data to `novel_data.json` or the specified filename.
+**Example:**
+```bash
+bun database.ts terminology update --word "魔法" --invalid-translation "เวทย์มนต์"
+```
+
+---
+
+### 2. Persona Management
+
+Manage character profiles, ensuring consistent tone, gender, and speaking styles.
+
+#### `personas add`
+Creates a new character persona.
+* **Required:**
+  * `--name <text>`: Character's Japanese name.
+  * `--gender <ชาย|หญิง|ไม่ระบุ>`: Character's gender.
+  * `--description <text>`: Thai description of the character.
+  * `--base_style <text>`: Thai instructions on how they speak (e.g., tone, politeness).
+  * `--negative_constraints <text>`: Thai instructions on what they should *never* say.
+  * `--example <text>`: Thai dialogue examples (repeatable, at least one required).
+  * `--alias <text>`: The official Thai translated name (exactly one).
+* **Optional:**
+  * `--invalid-translation <text>`: Incorrect name translations (repeatable).
+  * `--overwrite`: Force overwrite if the persona already exists.
+
+**Example:**
+```bash
+bun database.ts personas add \
+  --name "田中" \
+  --gender "ชาย" \
+  --description "เด็กหนุ่มขี้อายและสุภาพ" \
+  --base_style "พูดจาสุภาพเรียบร้อย ลงท้ายด้วย 'ครับ' เสมอ แทนตัวเองว่า 'ผม'" \
+  --negative_constraints "ห้ามใช้คำหยาบคายเด็ดขาด ห้ามพูดเสียงดัง" \
+  --example "สวัสดีครับ ผมทานากะครับ" \
+  --example "เอ่อ... ขอโทษนะครับที่รบกวน" \
+  --alias "ทานากะ"
+```
+
+#### `personas update`
+Updates an existing character persona.
+* **Required:**
+  * `--name <text>`: Character's Japanese name (must already exist).
+* **Optional:**
+  * `--gender <ชาย|หญิง|ไม่ระบุ>`: New gender.
+  * `--description <text>`: New Thai description.
+  * `--base_style <text>`: New speaking style rules.
+  * `--negative_constraints <text>`: New negative constraints.
+  * `--example <text>`: Additional Thai dialogue examples (repeatable).
+  * `--alias <text>`: Additional **Non-Thai** aliases (repeatable).
+  * `--invalid-translation <text>`: Additional invalid translations (repeatable).
+
+**Example:**
+```bash
+bun database.ts personas update --name "田中" --example "ขอบคุณมากครับ!" --alias "Tanaka"
+```
+
+---
+
+### 3. Search
+
+Search the database using fuzzy matching. It searches against Japanese names/words, aliases, and invalid translations.
+
+```bash
+bun database.ts search <query>
+```
+
+**Example:**
+```bash
+bun database.ts search "魔法"
+bun database.ts search "ทานากะ"
+```
+*Note: The search output is wrapped in `=== SEARCH_RESULT_START ===` and `=== SEARCH_RESULT_END ===` blocks for easy parsing.*
+
+---
+
+### 4. Save
+
+Manually trigger a save to the JSON file (though `add` and `update` commands save automatically).
+
+```bash
+bun database.ts save
+bun database.ts save custom_file.json
+```
+
+---
+
+### 5. Help
+
+Print the built-in help menu.
+
+```bash
+bun database.ts help
+```

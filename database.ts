@@ -72,7 +72,7 @@ const parseArgs = (args: string[]) => {
         result[key] = true;
       } else {
         if (i + 1 >= args.length) {
-          console.error(`Missing value for --${key}`);
+          console.error(`Error: Missing value for flag '--${key}'. Please provide a value after the flag.`);
           process.exit(1);
         }
         const value = args[i + 1];
@@ -95,51 +95,110 @@ const parseArgs = (args: string[]) => {
   return result;
 };
 
+const printHelp = () => {
+  console.log("Usage: bun database.ts <command> [subcommand] [options]");
+  console.log("");
+  console.log("Commands:");
+  console.log("  help                      Show this help message");
+  console.log("  terminology <add|update>  Manage terminology entries");
+  console.log("  personas <add|update>     Manage persona entries");
+  console.log("  search <query>            Search the database");
+  console.log("  save [filename]           Save data to file");
+  console.log("");
+  console.log("terminology add [options]");
+  console.log("  Required:");
+  console.log("    --word <Japanese>         Japanese term");
+  console.log("    --description <Thai>      Thai description");
+  console.log("    --alias <Thai>            Thai translation (exactly one)");
+  console.log("  Optional:");
+  console.log("    --invalid-translation <text>  Invalid translation (repeatable)");
+  console.log("    --overwrite               Force overwrite existing entry");
+  console.log("");
+  console.log("terminology update [options]");
+  console.log("  Required:");
+  console.log("    --word <Japanese>         Japanese term (must exist)");
+  console.log("  Optional:");
+  console.log("    --description <Thai>      New Thai description");
+  console.log("    --alias <text>            Non-Thai alias (repeatable)");
+  console.log("    --invalid-translation <text>  Invalid translation (repeatable)");
+  console.log("");
+  console.log("personas add [options]");
+  console.log("  Required:");
+  console.log("    --name <Japanese>           Character name");
+  console.log("    --gender <ชาย|หญิง|ไม่ระบุ>  Gender");
+  console.log("    --description <Thai>        Thai description");
+  console.log("    --base_style <Thai>         Thai speaking style");
+  console.log("    --negative_constraints <Thai>  Thai constraints");
+  console.log("    --example <Thai>            Thai example (repeatable, required for new)");
+  console.log("    --alias <Thai>              Thai translation (exactly one)");
+  console.log("  Optional:");
+  console.log("    --invalid-translation <text>  Invalid translation (repeatable)");
+  console.log("    --overwrite               Force overwrite existing entry");
+  console.log("");
+  console.log("personas update [options]");
+  console.log("  Required:");
+  console.log("    --name <Japanese>           Character name (must exist)");
+  console.log("  Optional:");
+  console.log("    --gender <ชาย|หญิง|ไม่ระบุ>  New gender");
+  console.log("    --description <Thai>        New Thai description");
+  console.log("    --base_style <Thai>         New speaking style");
+  console.log("    --negative_constraints <Thai>  New constraints");
+  console.log("    --example <Thai>            New example (repeatable)");
+  console.log("    --alias <text>              Non-Thai alias (repeatable)");
+  console.log("    --invalid-translation <text>  Invalid translation (repeatable)");
+  console.log("");
+  console.log("Examples:");
+  console.log('  bun database.ts terminology add --word "魔法" --description "เวทมนตร์" --alias "เวทมนตร์" --invalid-translation "magic"');
+  console.log('  bun database.ts personas add --name "田中" --gender "ชาย" --description "เด็กหนุ่มขี้อาย" --base_style "พูดสุภาพ ใช้ ครับ" --negative_constraints "ไม่ใช้คำหยาบ" --example "สวัสดีครับ" --alias "ทานากะ"');
+  console.log('  bun database.ts search "魔法"');
+};
+
 const args = process.argv.slice(2);
 const command = args[0];
 const subcommand = args[1];
 const param = args.slice(2).join(" ");
 
-if (command === "terminology") {
+if (!command || command === "help" || command === "--help" || command === "-h") {
+  printHelp();
+  process.exit(command ? 0 : 1);
+} else if (command === "terminology") {
   if (subcommand === "add") {
     const body = parseArgs(args.slice(2));
-    if (
-      !body.word ||
-      typeof body.word !== "string" ||
-      !body.description ||
-      typeof body.description !== "string" ||
-      (body.alias && !body.alias.every((a: any) => typeof a === "string"))
-    ) {
-      console.error(
-        "Invalid arguments: missing required fields or wrong types. Required: --word (string), --description (string), --alias (optional string array)",
-      );
+    
+    if (!body.word || typeof body.word !== "string") {
+      console.error("Error: Missing or invalid '--word'. You must provide a Japanese string (e.g., --word \"魔法\").");
       process.exit(1);
     }
+    if (!body.description || typeof body.description !== "string") {
+      console.error("Error: Missing or invalid '--description'. You must provide a Thai string (e.g., --description \"เวทมนตร์\").");
+      process.exit(1);
+    }
+    if (body.alias && !body.alias.every((a: any) => typeof a === "string")) {
+      console.error("Error: Invalid '--alias'. All aliases must be strings.");
+      process.exit(1);
+    }
+
     if (!isJapanese(body.word)) {
-      console.error("Invalid arguments: word must be Japanese");
+      console.error(`Error: The value for --word ("${body.word}") is invalid. It must contain Japanese characters.`);
       process.exit(1);
     }
     if (!isThai(body.description)) {
-      console.error("Invalid arguments: description must be Thai");
+      console.error(`Error: The value for --description ("${body.description}") is invalid. It must contain Thai characters.`);
       process.exit(1);
     }
     if (!body.alias || !body.alias.some(isThai)) {
-      console.error(
-        "Invalid arguments: alias must include at least one Thai translation",
-      );
+      console.error("Error: Missing Thai alias. You must provide at least one Thai translation using '--alias'.");
       process.exit(1);
     }
     if (body.alias.filter(isThai).length > 1) {
-      console.error(
-        "Invalid arguments: alias must include at most one Thai translation",
-      );
+      console.error(`Error: Too many Thai aliases provided (${body.alias.filter(isThai).join(", ")}). You must provide exactly ONE Thai translation in '--alias'.`);
       process.exit(1);
     }
+
     if ((data[body.word] as Terminology)?.description) {
       if (!body.overwrite) {
-        console.error(
-          `Error: Key '${body.word}' already exists. Existing entry:`,
-        );
+        console.error(`Error: Key '${body.word}' already exists. To overwrite, you must explicitly provide the '--overwrite' flag.`);
+        console.error("Existing entry:");
         console.log(JSON.stringify({ [body.word]: data[body.word] }, null, 2));
         process.exit(1);
       } else {
@@ -158,9 +217,8 @@ if (command === "terminology") {
       ).filter(isThai).length > 1
     ) {
       if (!body.overwrite) {
-        console.error(
-          `Error: Key '${body.word}' already has a Thai alias, please use the same alias. Existing entry:`,
-        );
+        console.error(`Error: Key '${body.word}' already has a Thai alias. Please use the same alias, or use '--overwrite' to force update.`);
+        console.error("Existing entry:");
         console.log(JSON.stringify({ [body.word]: data[body.word] }, null, 2));
         process.exit(1);
       } else {
@@ -201,42 +259,44 @@ if (command === "terminology") {
     console.log("Added");
   } else if (subcommand === "update") {
     const body = parseArgs(args.slice(2));
+    
     if (!body.word || typeof body.word !== "string") {
-      console.error("Invalid arguments: --word (string) is required");
+      console.error("Error: Missing '--word'. You must specify which terminology to update.");
       process.exit(1);
     }
     if (!isJapanese(body.word)) {
-      console.error("Invalid arguments: word must be Japanese");
+      console.error(`Error: The value for --word ("${body.word}") is invalid. It must contain Japanese characters.`);
       process.exit(1);
     }
+    
     const existing = data[body.word] as Terminology;
     if (!existing?.description) {
-      console.error(`Error: Terminology '${body.word}' does not exist.`);
+      console.error(`Error: Terminology '${body.word}' does not exist in the database. Use 'terminology add' to create it first.`);
       process.exit(1);
     }
+    
     // Validate description if provided
     if (body.description && !isThai(body.description)) {
-      console.error("Invalid arguments: description must be Thai");
+      console.error(`Error: The value for --description ("${body.description}") is invalid. It must contain Thai characters.`);
       process.exit(1);
     }
     // Validate examples if provided
     if (body.example) {
-      console.error("Invalid arguments: terminology does not have examples");
+      console.error("Error: Terminology entries do not support the '--example' field. Did you mean to use 'personas update'?");
       process.exit(1);
     }
     // Validate aliases - only NON-THAI allowed for update
     if (body.alias) {
       if (!body.alias.every((a: any) => typeof a === "string")) {
-        console.error("Invalid arguments: alias must be strings");
+        console.error("Error: Invalid '--alias'. All aliases must be strings.");
         process.exit(1);
       }
       if (body.alias.some(isThai)) {
-        console.error(
-          "Invalid arguments: cannot add Thai alias via update. Thai alias can only be set during add.",
-        );
+        console.error(`Error: Cannot add Thai alias ("${body.alias.filter(isThai).join(", ")}") via 'update'. The primary Thai alias can only be set during 'add'.`);
         process.exit(1);
       }
     }
+    
     // Update fields
     const updated: Terminology = {
       description: body.description || existing.description,
@@ -260,73 +320,80 @@ if (command === "terminology") {
     saveData();
     console.log("Updated");
   } else {
-    console.error("Unknown subcommand");
+    console.error(`Error: Unknown subcommand '${subcommand}' for 'terminology'. Valid subcommands are 'add' and 'update'.`);
+    process.exit(1);
   }
 } else if (command === "personas") {
   if (subcommand === "add") {
     const body = parseArgs(args.slice(2));
     const existed = !!data[body.name];
-    if (
-      !body.name ||
-      typeof body.name !== "string" ||
-      !body.description ||
-      typeof body.description !== "string" ||
-      !body.base_style ||
-      typeof body.base_style !== "string" ||
-      !body.negative_constraints ||
-      typeof body.negative_constraints !== "string" ||
-      (!existed && !body.example) ||
-      (body.example &&
-        (!Array.isArray(body.example) ||
-          !body.example.every((e: any) => typeof e === "string"))) ||
-      (body.alias && !body.alias.every((a: any) => typeof a === "string"))
-    ) {
-      console.error(
-        "Invalid arguments: missing required fields or wrong types. Required: --name (string), --description (string), --base_style (string), --negative_constraints (string), --example (string array, required for new), --alias (optional string array)",
-      );
+    
+    if (!body.name || typeof body.name !== "string") {
+      console.error("Error: Missing or invalid '--name'. You must provide a Japanese string.");
       process.exit(1);
     }
+    if (!body.description || typeof body.description !== "string") {
+      console.error("Error: Missing or invalid '--description'. You must provide a Thai string.");
+      process.exit(1);
+    }
+    if (!body.base_style || typeof body.base_style !== "string") {
+      console.error("Error: Missing or invalid '--base_style'. You must provide a Thai string.");
+      process.exit(1);
+    }
+    if (!body.negative_constraints || typeof body.negative_constraints !== "string") {
+      console.error("Error: Missing or invalid '--negative_constraints'. You must provide a Thai string.");
+      process.exit(1);
+    }
+    if (!existed && !body.example) {
+      console.error("Error: Missing '--example'. At least one example is required when adding a new persona.");
+      process.exit(1);
+    }
+    if (body.example && (!Array.isArray(body.example) || !body.example.every((e: any) => typeof e === "string"))) {
+      console.error("Error: Invalid '--example'. All examples must be strings.");
+      process.exit(1);
+    }
+    if (body.alias && !body.alias.every((a: any) => typeof a === "string")) {
+      console.error("Error: Invalid '--alias'. All aliases must be strings.");
+      process.exit(1);
+    }
+
     if (!isJapanese(body.name)) {
-      console.error("Invalid arguments: name must be Japanese");
+      console.error(`Error: The value for --name ("${body.name}") is invalid. It must contain Japanese characters.`);
       process.exit(1);
     }
     if (["ชาย", "หญิง", "ไม่ระบุ"].indexOf(body.gender) === -1) {
-      console.error("Invalid arguments: gender must be ชาย/หญิง/ไม่ระบุ");
+      console.error(`Error: Invalid gender "${body.gender}". Must be exactly one of: ชาย, หญิง, ไม่ระบุ`);
       process.exit(1);
     }
     if (!isThai(body.description)) {
-      console.error("Invalid arguments: description must be Thai");
+      console.error(`Error: The value for --description ("${body.description}") is invalid. It must contain Thai characters.`);
       process.exit(1);
     }
     if (!isThai(body.base_style)) {
-      console.error("Invalid arguments: base_style must be Thai");
+      console.error(`Error: The value for --base_style ("${body.base_style}") is invalid. It must contain Thai characters.`);
       process.exit(1);
     }
     if (!isThai(body.negative_constraints)) {
-      console.error("Invalid arguments: negative_constraints must be Thai");
+      console.error(`Error: The value for --negative_constraints ("${body.negative_constraints}") is invalid. It must contain Thai characters.`);
       process.exit(1);
     }
     if (body.example && !body.example.every(isThai)) {
-      console.error("Invalid arguments: example must be Thai");
+      console.error("Error: Invalid '--example'. All examples must contain Thai characters.");
       process.exit(1);
     }
     if (!body.alias || !body.alias.some(isThai)) {
-      console.error(
-        "Invalid arguments: alias must include at least one Thai translation",
-      );
+      console.error("Error: Missing Thai alias. You must provide at least one Thai translation using '--alias'.");
       process.exit(1);
     }
     if (body.alias.filter(isThai).length > 1) {
-      console.error(
-        "Invalid arguments: alias must include at most one Thai translation",
-      );
+      console.error(`Error: Too many Thai aliases provided (${body.alias.filter(isThai).join(", ")}). You must provide exactly ONE Thai translation in '--alias'.`);
       process.exit(1);
     }
+
     if ((data[body.name] as Persona)?.base_style) {
       if (!body.overwrite) {
-        console.error(
-          `Error: Key '${body.name}' already exists. Existing entry:`,
-        );
+        console.error(`Error: Key '${body.name}' already exists. To overwrite, you must explicitly provide the '--overwrite' flag.`);
+        console.error("Existing entry:");
         console.log(JSON.stringify({ [body.name]: data[body.name] }, null, 2));
         process.exit(1);
       } else {
@@ -345,9 +412,8 @@ if (command === "terminology") {
       ).filter(isThai).length > 1
     ) {
       if (!body.overwrite) {
-        console.error(
-          `Error: Key '${body.name}' already has a Thai alias, please use the same alias. Existing entry:`,
-        );
+        console.error(`Error: Key '${body.name}' already has a Thai alias. Please use the same alias, or use '--overwrite' to force update.`);
+        console.error("Existing entry:");
         console.log(JSON.stringify({ [body.name]: data[body.name] }, null, 2));
         process.exit(1);
       } else {
@@ -389,63 +455,64 @@ if (command === "terminology") {
     console.log("Added");
   } else if (subcommand === "update") {
     const body = parseArgs(args.slice(2));
+    
     if (!body.name || typeof body.name !== "string") {
-      console.error("Invalid arguments: --name (string) is required");
+      console.error("Error: Missing '--name'. You must specify which persona to update.");
       process.exit(1);
     }
     if (!isJapanese(body.name)) {
-      console.error("Invalid arguments: name must be Japanese");
+      console.error(`Error: The value for --name ("${body.name}") is invalid. It must contain Japanese characters.`);
       process.exit(1);
     }
+    
     const existing = data[body.name] as Persona;
     if (!existing) {
-      console.error(`Error: Persona '${body.name}' does not exist.`);
+      console.error(`Error: Persona '${body.name}' does not exist in the database. Use 'personas add' to create it first.`);
       process.exit(1);
     }
+    
     // Validate description if provided
     if (body.description) {
       if (typeof body.description !== "string" || !isThai(body.description)) {
-        console.error("Invalid arguments: description must be Thai");
+        console.error(`Error: The value for --description ("${body.description}") is invalid. It must be a string containing Thai characters.`);
         process.exit(1);
       }
     }
     // Validate gender if provided
     if (
       body.gender &&
-      typeof body.gender !== "string" &&
-      ["ชาย", "หญิง", "ไม่ระบุ"].indexOf(body.gender) === -1
+      (typeof body.gender !== "string" || ["ชาย", "หญิง", "ไม่ระบุ"].indexOf(body.gender) === -1)
     ) {
-      console.error("Invalid arguments: gender must be a ชาย/หญิง/ไม่ระบุ");
+      console.error(`Error: Invalid gender "${body.gender}". Must be exactly one of: ชาย, หญิง, ไม่ระบุ`);
       process.exit(1);
     }
     // Validate base_style if provided
     if (body.base_style && !isThai(body.base_style)) {
-      console.error("Invalid arguments: base_style must be Thai");
+      console.error(`Error: The value for --base_style ("${body.base_style}") is invalid. It must contain Thai characters.`);
       process.exit(1);
     }
     // Validate negative_constraints if provided
     if (body.negative_constraints && !isThai(body.negative_constraints)) {
-      console.error("Invalid arguments: negative_constraints must be Thai");
+      console.error(`Error: The value for --negative_constraints ("${body.negative_constraints}") is invalid. It must contain Thai characters.`);
       process.exit(1);
     }
     // Validate examples if provided - must all be Thai
     if (body.example && !body.example.every(isThai)) {
-      console.error("Invalid arguments: example must be Thai");
+      console.error("Error: Invalid '--example'. All examples must contain Thai characters.");
       process.exit(1);
     }
     // Validate aliases - only NON-THAI allowed for update
     if (body.alias) {
       if (!body.alias.every((a: any) => typeof a === "string")) {
-        console.error("Invalid arguments: alias must be strings");
+        console.error("Error: Invalid '--alias'. All aliases must be strings.");
         process.exit(1);
       }
       if (body.alias.some(isThai)) {
-        console.error(
-          "Invalid arguments: cannot add Thai alias via update. Thai alias can only be set during add.",
-        );
+        console.error(`Error: Cannot add Thai alias ("${body.alias.filter(isThai).join(", ")}") via 'update'. The primary Thai alias can only be set during 'add'.`);
         process.exit(1);
       }
     }
+    
     // Update fields
     const updated: Persona = {
       ...existing,
@@ -477,7 +544,8 @@ if (command === "terminology") {
     saveData();
     console.log("Updated");
   } else {
-    console.error("Unknown subcommand");
+    console.error(`Error: Unknown subcommand '${subcommand}' for 'personas'. Valid subcommands are 'add' and 'update'.`);
+    process.exit(1);
   }
 } else if (command === "save") {
   saveData();
@@ -506,7 +574,10 @@ if (command === "terminology") {
       .filter((r) => !exactMatches.some((e) => e.name === r.name))
       .sort((a, b) => a.score - b.score)
       .slice(0, 10);
-    const result = [...exactMatches, ...fuzzyResults];
+    const result = [...exactMatches, ...fuzzyResults] as (
+      | Persona
+      | (Terminology & { name: string; score?: number })
+    )[];
 
     console.log(`=== SEARCH_RESULT_START query="${word}" ===`);
     if (result.length === 0) {
@@ -517,8 +588,9 @@ if (command === "terminology") {
         console.log(
           `\n[Result ${index + 1}] Type: ${isPersona ? "Persona" : "Terminology"}`,
         );
-        console.log(`  Name: ${entry.name}`);
-        if (entry.gender) console.log(`  Gender: ${entry.gender}`);
+        if ("name" in entry) console.log(`  Name: ${entry.name}`);
+        if ("gender" in entry && entry.gender)
+          console.log(`  Gender: ${entry.gender}`);
         console.log(`  Description (Thai): ${entry.description}`);
         if (isPersona) {
           console.log(`  Base Style (Thai): ${entry.base_style}`);
@@ -553,20 +625,8 @@ if (command === "terminology") {
   }
   queries.forEach(search);
 } else {
-  console.log("Usage:");
-  console.log(
-    'bun database.ts terminology add --word "日本語単語" --description "คำอธิบายภาษาไทย" --alias "คำแปลภาษาไทย" --invalid-translation "wrong_translation1" --invalid-translation "wrong_translation2"',
-  );
-  console.log(
-    'bun database.ts terminology update --word "日本語単語" --description "คำอธิบายใหม่" --alias "EnglishAlias"',
-  );
-  console.log(
-    'bun database.ts personas add --name "日本語名前" --gender "ชาย" --description "คำอธิบายบุคลิก" --base_style "สไตล์การพูด" --negative_constraints "ข้อจำกัด" --example "ตัวอย่างประโยค" --alias "ชื่อภาษาไทย" --invalid-translation "wrong_translation"',
-  );
-  console.log(
-    'bun database.ts personas update --name "日本語名前" --gender "ชาย" --description "คำอธิบายใหม่" --base_style "สไตล์ใหม่" --negative_constraints "ข้อจำกัดใหม่" --example "ตัวอย่างเพิ่มเติม" --alias "EnglishAlias"',
-  );
-  console.log("bun database.ts search 'query'");
-  console.log("bun database.ts save [filename]");
+  console.error(`Error: Invalid command '${command}'.`);
+  console.error("Run 'bun database.ts help' for usage information.");
+  process.exit(1);
 }
 process.exit(0);

@@ -6,7 +6,9 @@
         ".gemini/CHARACTERS.md"
     ],
     "plugin": [
-        "opencode-gemini-auth@latest"
+        "opencode-gemini-auth@latest",
+        "opencode-qwencode-auth@latest",
+        "opencode-kilo-auth@latest"
     ],
     "mode": {
         "translate": {
